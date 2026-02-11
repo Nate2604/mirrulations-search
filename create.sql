@@ -13,4 +13,6 @@ CREATE TABLE IF NOT EXISTS document (
     authors VARCHAR(255),
     comment_start_date VARCHAR(255),
     comment_end_date VARCHAR(255),
+    posted_date DATETIME,
+    modified_date DATETIME
 );
