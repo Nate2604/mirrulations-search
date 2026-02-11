@@ -7,6 +7,11 @@ def create_app():
     @app.route("/")
     def hello_world():
         return "<p>Hello, World!</p>"
+	
+    @app.route("/search")
+    def search():
+	return ["Test", "Dummy"]
+
 
     return app
 
