@@ -1,8 +1,14 @@
+import os
 from flask import Flask, render_template
 
 
 def create_app():
-    app = Flask(__name__)
+    # This is needed due to templates being 2 levels up from this file causing flask not to see it.
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    templates_dir = os.path.join(project_root, 'templates')
+    static_dir = os.path.join(project_root, 'static')
+
+    app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
 
     @app.route("/")
     def home():
@@ -19,8 +25,8 @@ def create_app():
 
     return app
 
+app = create_app()
 
 if __name__ == '__main__':
-    app = create_app()
-    app.run(port=8000, debug=True)
+    app.run(port=80, debug=True)
 
