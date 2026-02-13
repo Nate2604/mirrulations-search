@@ -1,4 +1,4 @@
-# Devup File
+# How to Set up Developer Environment
 Authors: Jeffery Eisenhardt, Cole Aydelotte, Collin Cabral-Castro.
 
 # The What?
