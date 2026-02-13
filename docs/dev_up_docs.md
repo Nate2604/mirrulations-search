@@ -1,7 +1,7 @@
 # How to Set up Developer Environment
 Authors: Jeffery Eisenhardt, Cole Aydelotte, Collin Cabral-Castro.
 
-# The What?
+# What this script does
 
 dev_up.sh is a one-command development bootstrap script that automatically prepares and launches the application’s local runtime environment.
 
@@ -16,7 +16,7 @@ When executed, the script:
 
 In short, it provisions the environment and launches the backend in one process.
 
-# The Why?
+# Why we need this
 
 Setting up Python environments and starting services manually is repetitive and error-prone. Developers may forget steps, install packages globally, misconfigure paths, or start the server incorrectly.
 
@@ -29,14 +29,7 @@ This script exists to:
 
 By automating setup and execution, development becomes consistent, reproducible, and fast, allowing contributors to focus on building features rather than configuring tooling.
 
-# How to run
-
-Make the script executable (first time only):
-```bash
-chmod +x dev_up.sh
-```
-
-Run the script:
+# Run the script
 ```bash
 ./dev_up.sh
 ```
