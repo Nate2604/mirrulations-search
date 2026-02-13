@@ -5,3 +5,4 @@ gunicorn
 opensearch-py
 pytest-cov
 psycopg2-binary
+certbot
