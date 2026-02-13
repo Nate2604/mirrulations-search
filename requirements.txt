@@ -2,6 +2,7 @@ flask
 pylint 
 pytest
 gunicorn
+mysql-connector-python
 opensearch-py
 pytest-cov
 psycopg2-binary
