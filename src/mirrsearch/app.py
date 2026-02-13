@@ -15,11 +15,7 @@ def create_app():
     def home():
         return render_template('index.html')
 
-    
-    def hello_world():
-        return "<p>Hello, World!</p>"
-	
-    @app.route("/search")
+    @app.route("/search/")
     def search():
         # Get the search query from URL parameters
         search_input = request.args.get('str')
