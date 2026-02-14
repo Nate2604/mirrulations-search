@@ -1,8 +1,8 @@
-name: Static Analysis
+name: Unit Tests
 on: [push, pull_request]
 
 jobs:
-  static-tests:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -12,5 +12,6 @@ jobs:
       - name: Setup Repo & Environment
         uses: ./.github/actions/setup_venv
 
-      - name: Execute Static Analysis
-        run: pylint src/mirrsearch/ tests/
+      - name: Execute Unit Tests
+        run: |
+          PYTHONPATH=src pytest tests/
