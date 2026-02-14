@@ -20,4 +20,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Execute Static Analysis
-        run: pylint src tests
+        run: pylint src/mirrsearch/ tests/
