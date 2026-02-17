@@ -4,3 +4,8 @@
 ```bash
 ./setup_postgres.sh
 ```
+
+## To connect to DB:
+```bash
+python3 src/mirrsearch/db.py
+```
