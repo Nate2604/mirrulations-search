@@ -63,7 +63,7 @@ def get_postgres_connection() -> DBLayer:
     conn = psycopg2.connect(
         host="localhost",
         dbname="mirrulations",
-	user=os.getlogin()
+	    user=os.getlogin()
     )
     return DBLayer(conn=conn)
 
