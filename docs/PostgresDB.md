@@ -1,3 +1,13 @@
+# Postgres DB Setup
+
+## To start postgresql, create and initialize the database, as well as populate the database:
+```bash
+./setup_postgres.sh
+```
+
+## To connect to DB:
+```bash
+python3 src/mirrsearch/db.py
 # Postgres DB — Quick Reference
 
 This file provides quick commands to start, stop, and initialize the `mirrulations` PostgreSQL database used by this project.
