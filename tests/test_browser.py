@@ -1,11 +1,27 @@
 import time
 import json
 import subprocess
+import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 
-def test_browser_search():
+@pytest.fixture(name="driver")
+def fixture_driver():
+    # Needed to work with Github CI
+    options = Options()
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    set_up_driver = webdriver.Chrome(options=options)
+
+    set_up_driver.get('http://127.0.0.1:5001')
+
+    return set_up_driver
+
+def test_browser_search(driver):
 
     # Start Flask app
     process = subprocess.Popen(
@@ -15,15 +31,11 @@ def test_browser_search():
     # Give server time to start
     time.sleep(5)
 
-    driver = webdriver.Chrome()
-    driver.get('http://127.0.0.1:5001')
-
-    search_input = driver.find_element(By.ID, 'searchInput')
     search_terms = ['test', 'esrd']
 
     for search_term in search_terms:
-        search_input.clear()
-        search_input.send_keys(search_term)
+        driver.find_element(By.ID, 'searchInput').clear()
+        driver.find_element(By.ID, 'searchInput').send_keys(search_term)
 
         driver.find_element(By.ID, 'searchButton').click()
 
