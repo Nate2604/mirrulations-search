@@ -46,10 +46,11 @@ def fixture_driver():
     """Set up the Selenium Driver and Flask process"""
     free_port(5001)  # Ensure port is clear before starting
 
-    # Start flask app and keep it running for the duration of the test.
-    process = subprocess.Popen(  # pylint: disable=consider-using-with
+    # Start flask app
+    process = subprocess.Popen(
         ["flask", "--app", "src.mirrsearch.app", "run", "--port", "5001", "--no-reload"]
     )
+
     # Give server time to start
     time.sleep(5)
 
@@ -75,8 +76,6 @@ def fixture_driver():
 
 def test_browser_search(driver):
     """Run the test with two search terms"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     search_terms = ['test', 'esrd']
 
     for search_term in search_terms:
@@ -91,13 +90,20 @@ def test_browser_search(driver):
         wait.until(lambda d: d.find_element(By.ID, 'output').text != "")
 
         if search_term not in ['esrd']:
-            # No results expected for non-matching terms
-            data = json.loads(output.text)
-            assert data == []
+            expected = []
         else:
-            data = json.loads(output.text)
-            assert isinstance(data, list)
-            assert len(data) > 0
-            required_fields = {"agency_id", "cfrPart", "docket_id", "document_type", "title"}
-            assert all(required_fields.issubset(item.keys()) for item in data)
-            assert any("ESRD" in item["title"] for item in data)
+            expected = [
+        {
+            "agency_id": "CMS",
+            "cfrPart": "42 CFR Parts 413 and 512",
+            "docket_id": "CMS-2025-0240",
+            "document_type": "Proposed Rule",
+            "title": (
+                "CY 2026 Changes to the End-Stage Renal Disease (ESRD) "
+                "Prospective Payment System and Quality Incentive Program. "
+                "CMS1830-P Display"
+            ),
+        }
+    ]
+
+        assert json.loads(output.text) == expected
