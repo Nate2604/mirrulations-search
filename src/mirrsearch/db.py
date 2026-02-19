@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from typing import List, Dict, Any
+import os
 import psycopg2
 from opensearchpy import OpenSearch
+
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
 
 
 @dataclass(frozen=True)
@@ -48,11 +54,14 @@ class DBLayer:
         ]
 
 def get_postgres_connection() -> DBLayer:
+    if load_dotenv is not None:
+        load_dotenv()
     conn = psycopg2.connect(
-        host="localhost",
-        dbname="your_db",
-        user="your_user",
-        password="your_password"
+        host=os.getenv("DB_HOST", "localhost"),
+        port=os.getenv("DB_PORT", "5432"),
+        database=os.getenv("DB_NAME", "your_db"),
+        user=os.getenv("DB_USER", "your_user"),
+        password=os.getenv("DB_PASSWORD", "your_password")
     )
     return DBLayer(conn)
 
@@ -62,7 +71,7 @@ def get_db() -> DBLayer:
     Return the default DB layer for the app.
     Currently uses the in-memory dummy data for local/test usage.
     """
-    return DBLayer(conn=None)
+    return get_postgres_connection()
 
 
 def get_opensearch_connection() -> OpenSearch:
