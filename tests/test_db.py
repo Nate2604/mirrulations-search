@@ -324,12 +324,12 @@ def test_get_opensearch_connection(monkeypatch):
     assert captured["use_ssl"] is False
     assert captured["verify_certs"] is False
 
-def test_search_agency_only_inmemory(db):                                                                   
+def test_search_agency_only_inmemory(db):
     """Test that searching with only an agency filter returns matching items"""                             
-    result = db.search("", agency="CMS") 
+    result = db.search("", agency="CMS")
     assert len(result) == 2
     assert all(item["agency_id"] == "CMS" for item in result)
-    
+
 def test_search_postgres_branch_agency_only():
     rows = [("D1", "Title One", "CFR 1", "CMS", "Rule")]
     db = DBLayer(conn=_FakeConn(rows))
