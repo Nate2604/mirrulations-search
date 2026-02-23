@@ -1,0 +1,50 @@
+openapi: "3.0.0"
+info:
+  title: Mirrulations Search API
+  version: "1.0.0"
+  description: API for searching regulatory documents in the Mirrulations system
+
+paths:
+  /search/:
+    get:
+      summary: Search documents by keyword and optional filter
+      parameters:
+        - name: str
+          in: query
+          description: The search term to query against document titles and docket IDs
+          required: false
+          schema:
+            type: string
+          example: "Medicare"
+        - name: filter
+          in: query
+          description: Filter results by document type
+          required: false
+          schema:
+            type: string
+          example: "Proposed Rule"
+      responses:
+        "200":
+          description: A list of matching documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    docket_id:
+                      type: string
+                      example: "CMS-2025-0240"
+                    title:
+                      type: string
+                      example: "CY 2026 Changes to the End-Stage Renal Disease..."
+                    cfrPart:
+                      type: string
+                      example: "42 CFR Parts 413 and 512"
+                    agency_id:
+                      type: string
+                      example: "CMS"
+                    document_type:
+                      type: string
+                      example: "Proposed Rule"
