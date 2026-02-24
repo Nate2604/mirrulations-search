@@ -47,7 +47,7 @@ class DBLayer:
             }
         ]
 
-    def search(self, query: str, filter_param: str = None) -> List[Dict[str, Any]]:
+    def search(self, query: str, filter_param: str = None, agency:str = None) -> List[Dict[str, Any]]:
         q = (query or "").strip()
 
         if self.conn is None:
@@ -61,6 +61,11 @@ class DBLayer:
                     item for item in results
                     if item["document_type"].lower() == filter_param.lower()
                 ]
+            if agency:
+                results = [
+                    item for item in results
+                    if item["agency_id"].lower() == agency.lower()
+                ]
             return results
 
         sql = """
@@ -73,6 +78,10 @@ class DBLayer:
         if filter_param:
             sql += " AND document_type = %s"
             params.append(filter_param)
+
+        if agency:
+            sql += " AND agency_id ILIKE %s"
+            params.append(f"%{agency}%")
 
         with self.conn.cursor() as cur:
             cur.execute(sql, params)
