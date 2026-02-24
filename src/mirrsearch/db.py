@@ -47,26 +47,22 @@ class DBLayer:
             }
         ]
 
-    def search(self, query: str, filter_param: str = None, agency:str = None) -> List[Dict[str, Any]]:
+    def search(self, query: str, filter_param: str = None, agency:str = None) \
+            -> List[Dict[str, Any]]:
+
         q = (query or "").strip()
 
         if self.conn is None:
             q = q.lower()
-            results = [
+            return [
                 item for item in self._items()
-                if q in item["title"].lower() or q in item["docket_id"].lower()
+                if (q in item["title"].lower()
+                    or q in item["docket_id"].lower())
+                and (not filter_param
+                    or item["document_type"].lower() == filter_param.lower())
+                and (not agency
+                    or item["agency_id"].lower() == agency.lower())
             ]
-            if filter_param:
-                results = [
-                    item for item in results
-                    if item["document_type"].lower() == filter_param.lower()
-                ]
-            if agency:
-                results = [
-                    item for item in results
-                    if item["agency_id"].lower() == agency.lower()
-                ]
-            return results
 
         sql = """
             SELECT docket_id, title, cfr_part, agency_id, document_type
