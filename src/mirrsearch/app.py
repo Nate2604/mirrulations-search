@@ -6,7 +6,6 @@ from mirrsearch.internal_logic import InternalLogic
 def create_app():
     # This is needed due to templates being 2 levels up from this file causing flask not to see it.
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    templates_dir = os.path.join(project_root, 'templates')
     static_dir = os.path.join(project_root, 'static')
 
     flask_app = Flask(__name__, static_folder=static_dir, static_url_path='/static')

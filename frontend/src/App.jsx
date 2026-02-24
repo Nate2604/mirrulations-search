@@ -13,10 +13,15 @@ export default function App() {
 
     }
 
+    const handleSubmit = (event) => {
+        event.preventDefault()
+        runSearch()
+    }
+
     return (
         <div className="container">
             <h1>Mirrulations Explorer</h1>
-            <div className = "search-box">
+            <form className="search-box" onSubmit={handleSubmit}>
                 <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search query"/>
                 <select value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter (optional)">
                     <option value=""> All</option>
@@ -24,8 +29,8 @@ export default function App() {
                     <option value="Final Rule">Final Rule</option>
                     <option value="Notice">Notice</option>
                 </select>
-                <button onClick={runSearch}>Search</button>
-            </div>
+                <button type="submit">Search</button>
+            </form>
 
             <pre id = "output">{JSON.stringify(results, null, 2)}</pre>
 
