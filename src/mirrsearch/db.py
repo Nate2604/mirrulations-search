@@ -47,8 +47,13 @@ class DBLayer:
             }
         ]
 
+<<<<<<< fix_pylint
     def search(self, query: str, filter_param: str = None, agency:str = None) \
             -> List[Dict[str, Any]]:
+=======
+    def search(self, query: str, filter_param: str = None,
+               agency:str = None) -> List[Dict[str, Any]]:
+>>>>>>> main
         q = (query or "").strip()
 
         if self.conn is None:
