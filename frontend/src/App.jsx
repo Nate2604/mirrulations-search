@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import './index.css'
+import './styles/app.css'
+import { searchDockets } from './api/searchApi'
 
 export default function App() {
     const [query, setQuery] = useState('')
@@ -7,10 +8,8 @@ export default function App() {
     const [results, setResults] = useState([])
 
     const runSearch = async () => {
-        const res = await fetch(
-            `/search/?str=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}`
-        )
-        setResults(await res.json())
+        const data = await searchDockets(query, filter)
+        setResults(data)
 
     }
 

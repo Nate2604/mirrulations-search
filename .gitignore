@@ -5,3 +5,23 @@ __pycache__
 .env
 .coverage
 .DS_Store
+gunicorn.pid
+
+# npm / Node
+node_modules/
+frontend/node_modules/
+package-lock.json
+frontend/package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite build artifacts with hashed names
+index-*.js
+index-*.css
+static/index-*.js
+static/index-*.css
+static/assets/index-*.js
+static/assets/index-*.css
+

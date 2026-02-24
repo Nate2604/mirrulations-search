@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
@@ -9,11 +9,11 @@ def create_app():
     templates_dir = os.path.join(project_root, 'templates')
     static_dir = os.path.join(project_root, 'static')
 
-    flask_app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
+    flask_app = Flask(__name__, static_folder=static_dir, static_url_path='/static')
 
     @flask_app.route("/")
     def home():
-        return render_template('index.html')
+        return send_from_directory(static_dir, "index.html")
 
     @flask_app.route("/search/")
     def search():
@@ -24,8 +24,7 @@ def create_app():
             search_input = "example_query"
 
         logic = InternalLogic("sample_database")
-        results = logic.search(search_input, filter_param)
-        return jsonify(results)
+        return jsonify(logic.search(search_input, filter_param))
 
     return flask_app
 
