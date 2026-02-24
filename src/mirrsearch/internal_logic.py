@@ -6,6 +6,6 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         self.database = database
         self.db_layer = get_db()
 
-    def search(self, query, filter_param=None, agency_param=None):
-        search_results = self.db_layer.search(query, filter_param, agency_param)
+    def search(self, query, filter_param=None, agency=None):
+        search_results = self.db_layer.search(query, filter_param, agency)
         return search_results
