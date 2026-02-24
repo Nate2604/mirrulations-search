@@ -28,4 +28,12 @@ By automating setup and execution, development becomes consistent, reproducible,
 ./dev_up.sh
 ```
 
-The server will start automatically after setup completes.
+You will see a message that says that Mirrulations Search has been started.
+
+# How to turn off the project
+
+To take down the project, you will have to run a different script, this would be dev_down.sh
+
+## What does it do
+Dev_down.sh removes the process that is running on port 80 using the PID file that is created by gunicorn.py.
+It then will give you a message saying that Mirrulation Search is down
