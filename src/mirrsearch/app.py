@@ -18,7 +18,7 @@ def create_app():
     def search():
         search_input = request.args.get('str')
         filter_param = request.args.get('filter') # e.g. /search/?str=renal&filter=Proposed Rule
-        agency_param = request.args.get('agency') 
+        agency_param = request.args.get('agency')
 
         if search_input is None:
             search_input = "example_query"
