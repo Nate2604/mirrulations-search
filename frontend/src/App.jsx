@@ -6,9 +6,10 @@ export default function App() {
     const [query, setQuery] = useState('')
     const [filter, setFilter] = useState('')
     const [results, setResults] = useState([])
+    const [agency, setAgency] = useState('')
 
     const runSearch = async () => {
-        const data = await searchDockets(query, filter)
+        const data = await searchDockets(query, filter, agency)
         setResults(data)
 
     }
@@ -28,6 +29,13 @@ export default function App() {
                     <option value="Proposed Rule">Proposed Rule</option>
                     <option value="Final Rule">Final Rule</option>
                     <option value="Notice">Notice</option>
+                </select>
+                <select value={agency} onChange={e => setAgency(e.target.value)}>
+                    <option value="">All Agencies</option>
+                    <option value="CMS">CMS</option>
+                    <option value="EPA">EPA</option>
+                    <option value="HHS">HHS</option>
+                    <option value="FDA">FDA</option>
                 </select>
                 <button type="submit">Search</button>
             </form>
