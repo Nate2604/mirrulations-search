@@ -1,17 +1,7 @@
-from opensearchpy import OpenSearch
-from src.mirrsearch.db import get_db
+from mirrsearch.db import get_db, get_opensearch_connection
 
 INDEX_NAME = "docket-comments"
 DOCKET_ID = "CMS-2025-0240"
-
-
-def get_opensearch_client():
-    return OpenSearch(
-        hosts=[{"host": "localhost", "port": 9200}],
-        http_compress=True,
-        use_ssl=False,
-        verify_certs=False,
-    )
 
 
 def create_index_if_not_exists(client):
@@ -21,7 +11,7 @@ def create_index_if_not_exists(client):
 
 def ingest_one_docket(docket_id: str):
     db = get_db()
-    client = get_opensearch_client()
+    client = get_opensearch_connection()
 
     create_index_if_not_exists(client)
 
