@@ -20,6 +20,7 @@ pnpm-debug.log*
 # Vite build artifacts with hashed names
 index-*.js
 index-*.css
+/static/
 static/index-*.js
 static/index-*.css
 static/assets/index-*.js
