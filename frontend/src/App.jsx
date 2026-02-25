@@ -193,7 +193,7 @@ export default function App() {
                     <span>{t}</span>
                 </label>
                 ))}
-                </section>
+            </section>
 
               <section className="section">
                 <h3>Status</h3>
