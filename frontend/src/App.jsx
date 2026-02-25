@@ -2,6 +2,29 @@ import { useMemo, useState } from 'react'
 import './styles/app.css'
 import { searchDockets } from './api/searchApi'
 
+function CollapsibleSection({ title, defaultOpen = true, children, right }) {
+    const [open, setOpen] = useState(defaultOpen);
+  
+    return (
+      <section className="section">
+        <button
+          type="button"
+          className="sectionHeader"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          <span className="sectionTitle">{title}</span>
+          <span className="sectionRight">
+            {right}
+            <span className="sectionChev" aria-hidden="true">{open ? "▾" : "▸"}</span>
+          </span>
+        </button>
+  
+        {open && <div className="sectionBody">{children}</div>}
+      </section>
+    );
+  }
+
 export default function App() {
   const [query, setQuery] = useState('')
   const [docType, setDocType] = useState('') // maps to existing "filter" param
@@ -153,33 +176,52 @@ export default function App() {
                 </div>
               </section>
 
-              <section className="section">
-                <h3>Agency</h3>
-
+              <CollapsibleSection
+                title="Agency"
+                defaultOpen
+                right={<span className="pill">{agencySearch.trim() ? "search" : "top"}</span>}
+            >
                 <input
-                  value={agencySearch}
-                  onChange={(e) => setAgencySearch(e.target.value)}
-                  placeholder="Search agencies…"
+                    value={agencySearch}
+                    onChange={(e) => setAgencySearch(e.target.value)}
+                    placeholder="Search agencies…"
                 />
 
                 <div className="metaRow">
-                  <span>{agencySearch.trim() ? `Results for “${agencySearch.trim()}”` : 'Showing top agencies'}</span>
-                  <span className="pill">{agenciesToShow.length}</span>
+                    <span>
+                        {agencySearch.trim()
+                        ? `Results for “${agencySearch.trim()}”`
+                        : "Showing top agencies"}
+                    </span>
+                    <span className="pill">{agenciesToShow.length}</span>
                 </div>
 
-                <div className="list">
-                  {agenciesToShow.map((a) => (
-                    <label key={a.code} className="check">
-                      <input
-                        type="checkbox"
-                        checked={selectedAgencies.has(a.code)}
-                        onChange={() => setSelectedAgencies((prev) => toggleSet(prev, a.code))}
-                      />
-                      <span>{a.code} — {a.name}</span>
-                    </label>
-                  ))}
+                <div className="agencyListStatic">
+                    {agenciesToShow
+                    .slice(0, agencySearch.trim() ? 8 : 6) // cap results so it stays tidy
+                    .map((a) => (
+                        <label key={a.code} className="check">
+                            <input
+                                type="checkbox"
+                                checked={selectedAgencies.has(a.code)}
+                                onChange={() => setSelectedAgencies((prev) => toggleSet(prev, a.code))}
+                            />
+                            <span>{a.code} — {a.name}</span>
+                        </label>
+                    ))}
                 </div>
-              </section>
+
+                {agencySearch.trim() && agenciesToShow.length > 8 && (
+                    <div className="hintText">
+                        Showing top 8 matches. (Demo behavior)
+                    </div>
+                )}
+
+                {/* Future placeholder for your “agency categories” */}
+                <div className="futureNote">
+                    Future: agency category dropdown (TBD categories)
+                </div>
+            </CollapsibleSection>
 
               <section className="section">
                 <h3>Document Type</h3>
