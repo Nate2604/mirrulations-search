@@ -19,51 +19,12 @@ class DBLayer:
     """
     conn: Any = None
 
-    def _items(self) -> List[Dict[str, Any]]:
-        return [
-            {
-                "docket_id": "CMS-2025-0240",
-                "title": (
-                    "CY 2026 Changes to the End-Stage Renal Disease (ESRD) "
-                    "Prospective Payment System and Quality Incentive Program. "
-                    "CMS1830-P Display"
-                ),
-                "cfrPart": "42 CFR Parts 413 and 512",
-                "agency_id": "CMS",
-                "document_type": "Proposed Rule",
-            },
-            {
-                "docket_id": "CMS-2025-0240",
-                "title": (
-                    "Medicare Program: End-Stage Renal Disease Prospective "
-                    "Payment System, Payment for Renal Dialysis Services "
-                    "Furnished to Individuals with Acute Kidney Injury, "
-                    "End-Stage Renal Disease Quality Incentive Program, and "
-                    "End-Stage Renal Disease Treatment Choices Model"
-                ),
-                "cfrPart": "42 CFR Parts 413 and 512",
-                "agency_id": "CMS",
-                "document_type": "Proposed Rule",
-            }
-        ]
-
-    def search(self, query: str, filter_param: str = None, agency:str = None) \
+    def search(self, query: str, filter_param: str = None, agency: str = None) \
             -> List[Dict[str, Any]]:
+        if self.conn is None:
+            return []
 
         q = (query or "").strip()
-
-        if self.conn is None:
-            q = q.lower()
-            return [
-                item for item in self._items()
-                if (q in item["title"].lower()
-                    or q in item["docket_id"].lower())
-                and (not filter_param
-                    or item["document_type"].lower() == filter_param.lower())
-                and (not agency
-                    or item["agency_id"].lower() == agency.lower())
-            ]
-
         sql = """
             SELECT docket_id, title, cfr_part, agency_id, document_type
             FROM document
@@ -92,6 +53,7 @@ class DBLayer:
                 for row in cur.fetchall()
             ]
 
+
 def get_postgres_connection() -> DBLayer:
     if LOAD_DOTENV is not None:
         LOAD_DOTENV()
@@ -108,7 +70,6 @@ def get_postgres_connection() -> DBLayer:
 def get_db() -> DBLayer:
     """
     Return the default DB layer for the app.
-    Currently uses the in-memory dummy data for local/test usage.
     """
     if LOAD_DOTENV is not None:
         LOAD_DOTENV()
