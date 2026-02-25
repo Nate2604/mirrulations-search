@@ -182,6 +182,20 @@ export default function App() {
               </section>
 
               <section className="section">
+                <h3>Document Type</h3>
+                {["Proposed Rule", "Final Rule", "Notice"].map((t) => (
+                <label key={t} className="check">
+                    <input
+                        type="checkbox"
+                        checked={docType === t}
+                        onChange={() => setDocType((prev) => (prev === t ? "" : t))}
+                    />
+                    <span>{t}</span>
+                </label>
+                ))}
+                </section>
+
+              <section className="section">
                 <h3>Status</h3>
 
                 {['Open', 'Closed', 'Pending'].map((s) => (
@@ -211,31 +225,15 @@ export default function App() {
         <main className="main">
           <h1 className="title">Mirrulations Explorer</h1>
 
-          <form className="searchBox" onSubmit={handleSubmit}>
+          
+        <form className="searchBox" onSubmit={handleSubmit}>
             <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search query"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search query"
             />
-
-            <select value={docType} onChange={(e) => setDocType(e.target.value)}>
-              <option value="">All</option>
-              <option value="Proposed Rule">Proposed Rule</option>
-              <option value="Final Rule">Final Rule</option>
-              <option value="Notice">Notice</option>
-            </select>
-
-            <select value={agency} onChange={(e) => setAgency(e.target.value)}>
-              <option value="">All Agencies</option>
-              <option value="CMS">CMS</option>
-              <option value="EPA">EPA</option>
-              <option value="HHS">HHS</option>
-              <option value="FDA">FDA</option>
-              <option value="FCC">FCC</option>
-            </select>
-
             <button type="submit" className="btn btn-primary">Search</button>
-          </form>
+        </form>
 
           <div className="demoBox">
             <div className="demoTitle">Advanced filters (demo payload)</div>
