@@ -3,9 +3,10 @@ from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
-def create_app():
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    dist_dir = os.path.join(project_root, 'frontend', 'dist')
+def create_app(dist_dir=None):
+    if dist_dir is None:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        dist_dir = os.path.join(project_root, 'frontend', 'dist')
 
     flask_app = Flask(__name__, static_folder=dist_dir, static_url_path='')
 
