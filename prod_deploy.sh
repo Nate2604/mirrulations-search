@@ -12,6 +12,8 @@ if [ ! -d ".venv" ]; then
     ./.venv/bin/pip install -r requirements.txt
 fi
 
+(cd frontend && npm install && npm run build)
+
 sudo ln -sf "${PROJECT_ROOT}/.venv/bin/certbot" /usr/bin/certbot
 
 sudo systemctl stop mirrsearch 2>/dev/null || true

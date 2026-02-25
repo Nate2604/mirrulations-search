@@ -12,6 +12,8 @@ if [ ! -d ".venv" ]; then
     ./.venv/bin/pip install -r requirements.txt
 fi
 
+(cd frontend && npm install && npm run build)
+
 sudo systemctl stop mirrsearch 2>/dev/null || true
 
 sudo cp "${PROJECT_ROOT}/${MIRRSEARCH_SERVICE}" "${MIRRSEARCH_SERVICE_PATH}"
