@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
-def create_app(dist_dir=None):
+def create_app(dist_dir=None, db_layer=None):
     if dist_dir is None:
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         dist_dir = os.path.join(project_root, 'frontend', 'dist')
@@ -23,7 +23,7 @@ def create_app(dist_dir=None):
         if search_input is None:
             search_input = "example_query"
 
-        logic = InternalLogic("sample_database")
+        logic = InternalLogic("sample_database", db_layer=db_layer)
         return jsonify(logic.search(search_input, filter_param, agency_param))
 
     return flask_app
