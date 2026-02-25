@@ -2,7 +2,6 @@
 
 This guide explains how to:
 - Create and Activate a virtual environment
-- Run OpenSearch locally
 - Ingest dummy data
 - Verify indexed data
 
@@ -15,27 +14,14 @@ pip install -r requirements.txt
 
 1. Run OpenSearch Locally
 
-Install OpenSearch via Homebrew (If not done already)
-```bash
-brew install opensearch
-```
-
-Start the OpenSearch Service
-```bash
-brew services start opensearch
-```
-
-Verify OpenSearch Is Running
-```bash
-curl -X GET "http://localhost:9200/"
-```
-If running correctly, you should see JSON output confirming the cluster is active.
+Follow `docs/OpensearchInstall.md` to start OpenSearch, then continue here.
 
 2. Ingest Dummy Data
 
 ```bash
-python ingest_docket.py
+python db/ingest_docket.py
 ```
+
 If successful, the script will print:
 Ingested X records into OpenSearch.
 
@@ -49,4 +35,10 @@ If the ingest worked correctly, this command will return JSON containing the ind
 Stop OpenSearch
 ```bash
 brew services stop opensearch
+```
+
+If you used Docker instead:
+```bash
+docker stop opensearch
+docker rm opensearch
 ```
