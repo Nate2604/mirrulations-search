@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   workflow_run:
-    workflows: ["Static Analysis", "Unit Tests"]
+    workflows: ["Unit Tests"]
     branches:
       - main
     types:
@@ -15,6 +15,19 @@ jobs:
     environment: development
 
     steps:
+      - name: Verify Static Analysis passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh api \
+            repos/${{ github.repository }}/actions/workflows/static_analysis.yml/runs \
+            --jq ".workflow_runs[] | select(.head_sha==\"${{ github.event.workflow_run.head_sha }}\") | .conclusion" \
+            | head -1)
+          if [ "$conclusion" != "success" ]; then
+            echo "Static Analysis has not passed for this commit"
+            exit 1
+          fi
+
       - name: SSH into EC2 and redeploy
         uses: appleboy/ssh-action@v1.0.3
         with:
