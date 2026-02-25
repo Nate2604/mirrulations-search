@@ -6,6 +6,12 @@ MIRRSEARCH_SERVICE_PATH="/etc/systemd/system/${MIRRSEARCH_SERVICE}"
 DOMAIN="dev.mirrulations.org"
 
 cd "${PROJECT_ROOT}"
+
+if ! command -v node &>/dev/null; then
+    curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+    sudo yum install -y nodejs
+fi
+
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
     ./.venv/bin/pip install -e .
