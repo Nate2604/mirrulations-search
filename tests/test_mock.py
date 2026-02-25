@@ -13,25 +13,25 @@ def db():
     return MockDBLayer()
 
 
-# --- _items ---
+# --- get_all ---
 
-def test_items_returns_list(db):
-    assert isinstance(db._items(), list)
-
-
-def test_items_returns_two_records(db):
-    assert len(db._items()) == 2
+def test_get_all_returns_list(db):
+    assert isinstance(db.get_all(), list)
 
 
-def test_items_have_required_fields(db):
+def test_get_all_returns_two_records(db):
+    assert len(db.get_all()) == 2
+
+
+def test_get_all_have_required_fields(db):
     required_fields = ["docket_id", "title", "cfrPart", "agency_id", "document_type"]
-    for item in db._items():
+    for item in db.get_all():
         for field in required_fields:
             assert field in item, f"Item missing required field: {field}"
 
 
-def test_items_field_types(db):
-    for item in db._items():
+def test_get_all_field_types(db):
+    for item in db.get_all():
         assert isinstance(item["docket_id"], str)
         assert isinstance(item["title"], str)
         assert isinstance(item["cfrPart"], str)
@@ -39,8 +39,8 @@ def test_items_field_types(db):
         assert isinstance(item["document_type"], str)
 
 
-def test_items_content(db):
-    items = db._items()
+def test_get_all_content(db):
+    items = db.get_all()
     assert items[0]["docket_id"] == "CMS-2025-0240"
     assert items[0]["agency_id"] == "CMS"
     assert items[0]["document_type"] == "Proposed Rule"
@@ -115,11 +115,11 @@ def test_search_returns_correct_structure(db):
 
 
 def test_search_does_not_modify_original_data(db):
-    original = db._items()
+    original = db.get_all()
     db.search("CMS")
     db.search("Medicare")
     db.search("xyz")
-    assert db._items() == original
+    assert db.get_all() == original
 
 
 def test_search_special_characters(db):

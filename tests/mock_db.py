@@ -1,7 +1,3 @@
-"""
-Mock DB Layer that imitates the real DB and holds 2 items
-of dummy data.
-"""
 from typing import List, Dict, Any
 
 
@@ -57,3 +53,8 @@ class MockDBLayer:
                 if item["agency_id"].lower() == agency.lower()
             ]
         return results
+
+
+    def get_all(self) -> List[Dict[str, Any]]:
+        """Return all dummy records without filtering."""
+        return self._items()

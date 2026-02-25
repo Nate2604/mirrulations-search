@@ -3,16 +3,16 @@ from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
-def create_app(db_layer=None):
-    # This is needed due to templates being 2 levels up from this file causing flask not to see it.
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    static_dir = os.path.join(project_root, 'static')
+def create_app(dist_dir=None, db_layer=None):
+    if dist_dir is None:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        dist_dir = os.path.join(project_root, 'frontend', 'dist')
 
-    flask_app = Flask(__name__, static_folder=static_dir, static_url_path='/static')
+    flask_app = Flask(__name__, static_folder=dist_dir, static_url_path='')
 
     @flask_app.route("/")
     def home():
-        return send_from_directory(static_dir, "index.html")
+        return send_from_directory(dist_dir, "index.html")
 
     @flask_app.route("/search/")
     def search():
@@ -30,4 +30,3 @@ app = create_app()
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)
-    

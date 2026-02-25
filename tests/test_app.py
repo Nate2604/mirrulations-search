@@ -1,9 +1,27 @@
 """
-Tests for the Flask app endpoints.
-Uses MockDBLayer injected via the `client` fixture in conftest.py.
+Tests for the Flask app endpoints
 """
 # pylint: disable=redefined-outer-name
 import pytest
+from mock_db import MockDBLayer
+from mirrsearch.app import create_app
+
+
+@pytest.fixture
+def app(tmp_path):
+    """Create and configure a test app instance"""
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html></html>")
+    test_app = create_app(dist_dir=str(dist), db_layer=MockDBLayer())
+    test_app.config['TESTING'] = True
+    return test_app
+
+
+@pytest.fixture
+def client(app):
+    """Create a test client for the app"""
+    return app.test_client()
 
 
 def test_home_endpoint(client):
@@ -19,72 +37,78 @@ def test_search_endpoint_exists(client):
 
 
 def test_search_returns_list(client):
-    """Test that search endpoint returns a JSON list"""
+    """Test that search endpoint returns a list"""
     response = client.get('/search/')
     assert response.status_code == 200
+    # Flask will auto-convert the list to JSON
     assert response.is_json
-    assert isinstance(response.get_json(), list)
+    data = response.get_json()
+    assert isinstance(data, list)
 
 
 def test_search_returns_dummy_data(client):
-    """Test that search endpoint returns expected mock data"""
+    """Test that search endpoint returns expected data (dummy or Postgres)"""
     response = client.get('/search/?str=ESRD')
     data = response.get_json()
+    # Should return a list
     assert isinstance(data, list)
     assert len(data) > 0
+    # Verify the data contains expected fields
     assert 'docket_id' in data[0]
     assert 'title' in data[0]
     assert 'ESRD' in data[0]['title'] or 'End-Stage Renal Disease' in data[0]['title']
 
 
 def test_search_with_query_parameter(client):
-    """Test that search endpoint accepts and filters by query parameter"""
+    """Test that search endpoint accepts and returns query parameter"""
     response = client.get('/search/?str=ESRD')
     data = response.get_json()
+    # Should return a list
     assert isinstance(data, list)
     assert len(data) > 0
+    # Verify it returns ESRD-related results (dummy or Postgres)
     assert any('ESRD' in item['title'] for item in data)
 
 
 def test_search_with_different_query_parameters(client):
     """Test search endpoint with various query strings"""
-    # By docket ID
-    data1 = client.get('/search/?str=CMS-2025-024').get_json()
+    # Test with docket ID
+    response1 = client.get('/search/?str=CMS-2025-024')
+    data1 = response1.get_json()
     assert isinstance(data1, list)
     assert len(data1) > 0
     assert all(item['docket_id'].startswith('CMS-2025-024') for item in data1)
 
-    # By partial title
-    data2 = client.get('/search/?str=ESRD').get_json()
+    # Test with partial title match
+    response2 = client.get('/search/?str=ESRD')
+    data2 = response2.get_json()
     assert isinstance(data2, list)
     assert len(data2) > 0
     assert any('ESRD' in item['title'] for item in data2)
 
-    # By agency ID
-    data3 = client.get('/search/?str=CMS').get_json()
+    # Test with agency ID match
+    response3 = client.get('/search/?str=CMS')
+    data3 = response3.get_json()
     assert isinstance(data3, list)
     assert len(data3) > 0
     assert all(item['agency_id'] == 'CMS' for item in data3)
 
 
-@pytest.mark.integration
-def test_search_with_postgres_seed_data(client):
-    """Integration test: requires Postgres with seed data."""
-    pytest.skip("Integration test requires USE_POSTGRES=true and a live DB")
-
-
 def test_search_without_filter_returns_all_matches(client):
-    """Omitting filter returns all matching results regardless of document_type"""
+    """Test that omitting the filter param returns all matching results
+    regardless of document_type"""
     response = client.get('/search/?str=renal')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) > 0
-    assert len({item['document_type'] for item in data}) >= 1
+    # All dummy records are "Proposed Rule", but the point is no filter was applied
+    document_types = {item['document_type'] for item in data}
+    assert len(document_types) >= 1
 
 
 def test_search_with_valid_filter_returns_matching_document_type(client):
-    """filter param restricts results to the specified document_type"""
+    """Test that the filter param restricts results to the specified document_type"""
     response = client.get('/search/?str=renal&filter=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
@@ -94,19 +118,20 @@ def test_search_with_valid_filter_returns_matching_document_type(client):
 
 
 def test_search_with_filter_only_affects_document_type(client):
-    """Filtered results still match the search query"""
+    """Test that filtered results still match the search query"""
     response = client.get('/search/?str=ESRD&filter=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) > 0
+    # Every result must satisfy both the query and the filter
     for item in data:
         assert 'ESRD' in item['title'] or 'esrd' in item['title'].lower()
         assert item['document_type'] == 'Proposed Rule'
 
 
 def test_search_with_nonexistent_filter_returns_empty_list(client):
-    """A filter value matching no document_type returns an empty list"""
+    """Test that a filter value matching no document_type returns an empty list"""
     response = client.get('/search/?str=renal&filter=Final Rule')
     assert response.status_code == 200
     data = response.get_json()
@@ -115,30 +140,38 @@ def test_search_with_nonexistent_filter_returns_empty_list(client):
 
 
 def test_search_filter_is_case_insensitive(client):
-    """Filter comparison is case-insensitive"""
-    data_lower = client.get('/search/?str=renal&filter=proposed rule').get_json()
-    data_upper = client.get('/search/?str=renal&filter=PROPOSED RULE').get_json()
-    data_mixed = client.get('/search/?str=renal&filter=Proposed Rule').get_json()
+    """Test that the filter comparison is case-insensitive"""
+    response_lower = client.get('/search/?str=renal&filter=proposed rule')
+    response_upper = client.get('/search/?str=renal&filter=PROPOSED RULE')
+    response_mixed = client.get('/search/?str=renal&filter=Proposed Rule')
+
+    data_lower = response_lower.get_json()
+    data_upper = response_upper.get_json()
+    data_mixed = response_mixed.get_json()
+
     assert len(data_lower) == len(data_upper) == len(data_mixed)
     assert data_lower == data_upper == data_mixed
 
 
 def test_search_filter_without_query_string_uses_default(client):
-    """Filter works even when no str param is provided (falls back to example_query)"""
+    """Test that filter works even when no str param is provided (falls back to default query)"""
+    # No str param — app defaults to "example_query", which matches nothing in dummy data
     response = client.get('/search/?filter=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
-    assert len(data) == 0  # "example_query" matches nothing in mock data
+    # "example_query" won't match any dummy records, so the result should be empty
+    assert len(data) == 0
 
 
 def test_search_filter_result_structure(client):
-    """Filtered results contain all required fields"""
+    """Test that filtered results still contain all required fields"""
     response = client.get('/search/?str=CMS&filter=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) > 0
+
     required_fields = ['docket_id', 'title', 'cfrPart', 'agency_id', 'document_type']
     for item in data:
         for field in required_fields:
@@ -182,4 +215,3 @@ def test_search_with_agency_and_filter(client):
     for item in data:
         assert item['agency_id'] == 'CMS'
         assert item['document_type'] == 'Proposed Rule'
-        

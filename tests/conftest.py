@@ -1,6 +1,7 @@
 """
 Shared pytest fixtures for all tests.
 """
+# pylint: disable=redefined-outer-name
 import pytest
 from mock_db import MockDBLayer
 from mirrsearch.app import create_app
@@ -13,9 +14,12 @@ def mock_db():
 
 
 @pytest.fixture
-def app(mock_db):
-    """Create a test app that uses MockDBLayer instead of the real DB."""
-    flask_app = create_app(db_layer=mock_db)
+def app(tmp_path, mock_db):
+    """Create a test app that uses MockDBLayer and a temporary dist dir."""
+    dist = tmp_path / "frontend" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html></html>")
+    flask_app = create_app(dist_dir=str(dist), db_layer=mock_db)
     flask_app.config['TESTING'] = True
     return flask_app
 
@@ -24,4 +28,3 @@ def app(mock_db):
 def client(app):
     """Test client for the app."""
     return app.test_client()
-    
