@@ -27,7 +27,13 @@
 
   NOTE: `-e` means the package is editable
 
+## How build react
 
+First CD into frontend/ and run
+`npm install`
+
+Then to build the project run
+`npm run build`
 
 ## Run the Flask Server
 
