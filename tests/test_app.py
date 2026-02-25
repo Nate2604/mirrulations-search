@@ -8,11 +8,14 @@ from mirrsearch.app import create_app
 
 
 @pytest.fixture
-def app():
+def app(tmp_path):
     """Create and configure a test app instance"""
-    app = create_app()
-    app.config['TESTING'] = True
-    return app
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html></html>")
+    test_app = create_app(dist_dir=str(dist))
+    test_app.config['TESTING'] = True
+    return test_app
 
 
 @pytest.fixture

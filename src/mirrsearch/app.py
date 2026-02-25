@@ -1,31 +1,30 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
-def create_app():
-    # This is needed due to templates being 2 levels up from this file causing flask not to see it.
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    templates_dir = os.path.join(project_root, 'templates')
-    static_dir = os.path.join(project_root, 'static')
+def create_app(dist_dir=None):
+    if dist_dir is None:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        dist_dir = os.path.join(project_root, 'frontend', 'dist')
 
-    flask_app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
+    flask_app = Flask(__name__, static_folder=dist_dir, static_url_path='')
 
     @flask_app.route("/")
     def home():
-        return render_template('index.html')
+        return send_from_directory(dist_dir, "index.html")
 
     @flask_app.route("/search/")
     def search():
         search_input = request.args.get('str')
-        filter_param = request.args.get('filter')  # e.g. /search/?str=renal&filter=Proposed Rule
+        filter_param = request.args.get('filter') # e.g. /search/?str=renal&filter=Proposed Rule
+        agency_param = request.args.get('agency')
 
         if search_input is None:
             search_input = "example_query"
 
         logic = InternalLogic("sample_database")
-        results = logic.search(search_input, filter_param)
-        return jsonify(results)
+        return jsonify(logic.search(search_input, filter_param, agency_param))
 
     return flask_app
 
