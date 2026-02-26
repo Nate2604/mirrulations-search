@@ -90,7 +90,8 @@ export default function App() {
   }, [yearFrom, yearTo, selectedAgencies, status])
 
   const runSearch = async () => {
-    const data = await searchDockets(query, docType, agency)
+    const firstAgency = Array.from(selectedAgencies)[0] || ''
+    const data = await searchDockets(query, docType, firstAgency)
     setResults(data)
   }
 
@@ -204,7 +205,14 @@ export default function App() {
                             <input
                                 type="checkbox"
                                 checked={selectedAgencies.has(a.code)}
-                                onChange={() => setSelectedAgencies((prev) => toggleSet(prev, a.code))}
+                                onChange={() =>
+                                    setSelectedAgencies((prev) => {
+                                      if (prev.has(a.code)) {
+                                        return new Set() // uncheck if already selected
+                                      }
+                                      return new Set([a.code]) // replace with only this agency
+                                    })
+                                  }
                             />
                             <span>{a.code} — {a.name}</span>
                         </label>
