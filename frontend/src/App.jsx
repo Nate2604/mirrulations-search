@@ -4,20 +4,17 @@ import { searchDockets } from "./api/searchApi";
 import AdvancedSidebar from "./components/AdvancedSidebar";
 import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
-
 export default function App() {
-  const [query, setQuery] = useState("");
-  const [docType, setDocType] = useState("");
-  const [results, setResults] = useState([]);
-
-  const [advOpen, setAdvOpen] = useState(true);
-  const [yearFrom, setYearFrom] = useState("");
-  const [yearTo, setYearTo] = useState("");
-  const [agencySearch, setAgencySearch] = useState("");
-  const [selectedAgencies, setSelectedAgencies] = useState(new Set());
-  const [status, setStatus] = useState(new Set());
-
-  const TOP_AGENCIES = [
+const [query, setQuery] = useState("");
+const [docType, setDocType] = useState("");
+const [results, setResults] = useState([]);
+const [advOpen, setAdvOpen] = useState(true);
+const [yearFrom, setYearFrom] = useState("");
+const [yearTo, setYearTo] = useState("");
+const [agencySearch, setAgencySearch] = useState("");
+const [selectedAgencies, setSelectedAgencies] = useState(new Set());
+const [status, setStatus] = useState(new Set());
+const TOP_AGENCIES = [
     { code: "EPA", name: "Environmental Protection Agency" },
     { code: "HHS", name: "Health and Human Services" },
     { code: "FDA", name: "Food and Drug Administration" },
@@ -25,10 +22,9 @@ export default function App() {
     { code: "DOT", name: "Department of Transportation" },
     { code: "FCC", name: "Federal Communications Commission" },
   ];
-
-  const agenciesToShow = useMemo(() => {
-    const q = agencySearch.toLowerCase();
-    return q
+const agenciesToShow = useMemo(() => {
+const q = agencySearch.toLowerCase();
+return q
       ? TOP_AGENCIES.filter(
           (a) =>
             a.code.toLowerCase().includes(q) ||
@@ -36,81 +32,72 @@ export default function App() {
         )
       : TOP_AGENCIES;
   }, [agencySearch]);
-
-  const activeCount =
+const activeCount =
     (yearFrom ? 1 : 0) +
     (yearTo ? 1 : 0) +
     selectedAgencies.size +
     status.size;
-
-  const runSearch = async () => {
-    const firstAgency = Array.from(selectedAgencies)[0] || ""
-    const data = await searchDockets(query, docType, firstAgency)
+const runSearch = async () => {
+const firstAgency = Array.from(selectedAgencies)[0] || ""
+const data = await searchDockets(query, docType, firstAgency)
     setResults(data);
   };
-
-  const advancedPayload = {
+const advancedPayload = {
     yearFrom,
     yearTo,
     agencies: Array.from(selectedAgencies),
     status: Array.from(status),
   };
-
-  const clearAdvanced = () => {
+const clearAdvanced = () => {
     setYearFrom("");
     setYearTo("");
     setAgencySearch("");
     setSelectedAgencies(new Set());
     setStatus(new Set());
   };
-
-  return (
-    <div className="page">
-      <header className="topbar">
-        <div className="brand">Mirrulations</div>
-        <button className="btn btn-primary">Log Out</button>
-      </header>
-
-      <div className="layout">
-        <AdvancedSidebar
-          advOpen={advOpen}
-          setAdvOpen={setAdvOpen}
-          yearFrom={yearFrom}
-          setYearFrom={setYearFrom}
-          yearTo={yearTo}
-          setYearTo={setYearTo}
-          agencySearch={agencySearch}
-          setAgencySearch={setAgencySearch}
-          agenciesToShow={agenciesToShow}
-          selectedAgencies={selectedAgencies}
-          setSelectedAgencies={setSelectedAgencies}
-          docType={docType}
-          setDocType={setDocType}
-          status={status}
-          setStatus={setStatus}
-          clearAdvanced={clearAdvanced}
-          applyAdvanced={runSearch}
-          activeCount={activeCount}
-        />
-
-        <main className="main">
-          <h1 className="title">Mirrulations Explorer</h1>
-
-          <SearchBar
-            query={query}
-            setQuery={setQuery}
-            onSubmit={(e) => {
+return (
+<div className="page">
+<header className="topbar">
+<div className="brand">Mirrulations</div>
+<button className="btn btn-primary">Log Out</button>
+</header>
+<div className="layout">
+<AdvancedSidebar
+advOpen={advOpen}
+setAdvOpen={setAdvOpen}
+yearFrom={yearFrom}
+setYearFrom={setYearFrom}
+yearTo={yearTo}
+setYearTo={setYearTo}
+agencySearch={agencySearch}
+setAgencySearch={setAgencySearch}
+agenciesToShow={agenciesToShow}
+selectedAgencies={selectedAgencies}
+setSelectedAgencies={setSelectedAgencies}
+docType={docType}
+setDocType={setDocType}
+status={status}
+setStatus={setStatus}
+clearAdvanced={clearAdvanced}
+applyAdvanced={runSearch}
+activeCount={activeCount}
+/>
+<main className="main">
+<h1 className="title">Mirrulations Explorer</h1>
+<SearchBar
+query={query}
+setQuery={setQuery}
+onSubmit={(e) => {
               e.preventDefault();
               runSearch();
             }}
-          />
-
-          <ResultsPanel
-            advancedPayload={advancedPayload}
-            results={results}
-          />
-        </main>
-      </div>
-    </div>
+/>
+<ResultsPanel
+advancedPayload={advancedPayload}
+results={results}
+/>
+</main>
+</div>
+</div>
   );
 }
