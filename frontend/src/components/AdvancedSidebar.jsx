@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { motion } from "motion/react"
+
 
 function CollapsibleSection({ title, defaultOpen = true, children, right }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -47,7 +49,11 @@ export default function AdvancedSidebar({
   const statuses = ["Open", "Closed", "Pending"];
 
   return (
-    <aside className="sidebar">
+    <motion.aside className="sidebar"
+    initial={{ opacity: 0, y: -20 }}   
+    animate={{ opacity: 1, y: 0 }}     
+    transition={{ delay: 0.4 ,duration: 0.9, ease: "easeInOut" }}
+    >
       <button
         className="advHeader"
         onClick={() => setAdvOpen((v) => !v)}
@@ -197,6 +203,6 @@ export default function AdvancedSidebar({
           </div>
         </div>
       )}
-    </aside>
+    </motion.aside>
   );
 }

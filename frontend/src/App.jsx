@@ -4,6 +4,9 @@ import { searchDockets } from "./api/searchApi";
 import AdvancedSidebar from "./components/AdvancedSidebar";
 import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
+import { motion } from "motion/react"
+
+
 export default function App() {
 const [query, setQuery] = useState("");
 const [docType, setDocType] = useState("");
@@ -83,7 +86,11 @@ applyAdvanced={runSearch}
 activeCount={activeCount}
 />
 <main className="main">
-<h1 className="title">Mirrulations Explorer</h1>
+<motion.h1 className="title"
+initial={{ opacity: 0, y: -20 }}   
+animate={{ opacity: 1, y: 0 }}     
+transition={{ delay: 0.8 ,duration: 0.9, ease: "easeInOut" }}
+>Mirrulations Explorer</motion.h1>
 <SearchBar
 query={query}
 setQuery={setQuery}
