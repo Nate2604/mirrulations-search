@@ -86,6 +86,6 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE TABLE IF NOT EXISTS cfrparts (
     document_id VARCHAR(50) NOT NULL PRIMARY KEY REFERENCES documents(document_id),
-    frDocNum VARCHAR(50), -- need method to retrieve this from API team
+    frDocNum VARCHAR(50), -- need to retrieve this and cfrPart from federal reserve
     cfrPart VARCHAR(50) -- when a query occurs, checks to see if this is null --> if so use frDocNum to call API & retrieve cfr part to add to table
 );
