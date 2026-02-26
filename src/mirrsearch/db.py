@@ -47,10 +47,15 @@ class DBLayer:
             }
         ]
 
-    def search(self, query: str, filter_param: str = None, agency:str = None) \
+    def search(
+            self,
+            query: str,
+            document_type_param: str = None,
+            agency:str = None,
+            cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
 
-        q = (query or "").strip()
+        q = (query or "").strip().lower()
 
         if self.conn is None:
             q = q.lower()
@@ -58,10 +63,12 @@ class DBLayer:
                 item for item in self._items()
                 if (q in item["title"].lower()
                     or q in item["docket_id"].lower())
-                and (not filter_param
-                    or item["document_type"].lower() == filter_param.lower())
+                and (not document_type_param
+                    or item["document_type"].lower() == document_type_param.lower())
                 and (not agency
                     or item["agency_id"].lower() == agency.lower())
+                and (not cfr_part_param
+                    or item["cfrPart"].lower() == cfr_part_param.lower())
             ]
 
         sql = """
@@ -71,9 +78,13 @@ class DBLayer:
         """
         params = [f"%{q}%", f"%{q}%"] if q else ["%%", "%%"]
 
-        if filter_param:
+        if document_type_param:
             sql += " AND document_type = %s"
-            params.append(filter_param)
+            params.append(document_type_param)
+
+        if cfr_part_param:
+            sql += " AND cfr_part = %s"
+            params.append(cfr_part_param)
 
         if agency:
             sql += " AND agency_id ILIKE %s"

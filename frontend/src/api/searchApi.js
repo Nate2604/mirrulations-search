@@ -1,7 +1,7 @@
-export async function searchDockets(query, filter = '', agency = '') {
+export async function searchDockets(query, document_type = '', agency = '') {
     // EncodeURIComponent allows for spaces, special chars, etc
 	const response = await fetch(
-        `/search/?str=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}&agency=${encodeURIComponent(agency)}`
+        `/search/?str=${encodeURIComponent(query)}&document_type=${encodeURIComponent(document_type)}&agency=${encodeURIComponent(agency)}`
     )
 
 	if (!response.ok) {

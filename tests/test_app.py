@@ -131,10 +131,10 @@ def test_search_without_filter_returns_all_matches(client):
 
 
 def test_search_with_valid_filter_returns_matching_document_type(client):
-    """Test that the filter param restricts results to the specified document_type"""
+    """Test that the document_type param restricts results to the specified document_type"""
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
-    response = client.get('/search/?str=renal&filter=Proposed Rule')
+    response = client.get('/search/?str=renal&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -146,7 +146,7 @@ def test_search_with_filter_only_affects_document_type(client):
     """Test that filtered results still match the search query"""
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
-    response = client.get('/search/?str=ESRD&filter=Proposed Rule')
+    response = client.get('/search/?str=ESRD&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -161,7 +161,7 @@ def test_search_with_nonexistent_filter_returns_empty_list(client):
     """Test that a filter value matching no document_type returns an empty list"""
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
-    response = client.get('/search/?str=renal&filter=Final Rule')
+    response = client.get('/search/?str=renal&document_type=Final Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -172,9 +172,9 @@ def test_search_filter_is_case_insensitive(client):
     """Test that the filter comparison is case-insensitive"""
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
-    response_lower = client.get('/search/?str=renal&filter=proposed rule')
-    response_upper = client.get('/search/?str=renal&filter=PROPOSED RULE')
-    response_mixed = client.get('/search/?str=renal&filter=Proposed Rule')
+    response_lower = client.get('/search/?str=renal&document_type=proposed rule')
+    response_upper = client.get('/search/?str=renal&document_type=PROPOSED RULE')
+    response_mixed = client.get('/search/?str=renal&document_type=Proposed Rule')
 
     data_lower = response_lower.get_json()
     data_upper = response_upper.get_json()
@@ -189,7 +189,7 @@ def test_search_filter_without_query_string_uses_default(client):
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
     # No str param — app defaults to "example_query", which matches nothing in dummy data
-    response = client.get('/search/?filter=Proposed Rule')
+    response = client.get('/search/?document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -201,7 +201,7 @@ def test_search_filter_result_structure(client):
     """Test that filtered results still contain all required fields"""
     if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
         pytest.skip("Unit tests expect dummy data")
-    response = client.get('/search/?str=CMS&filter=Proposed Rule')
+    response = client.get('/search/?str=CMS&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
