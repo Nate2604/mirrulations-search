@@ -83,9 +83,10 @@ CREATE TABLE IF NOT EXISTS documents (
 -- CFR PARTS TABLE
 -- =========================================
 -- Stores cfr part numbers for corresponding documents; references documents
+-- cfrPart and frDocNum will be null at table creation & are retrieved from federal reserve & inserted into the table at the first query
 
 CREATE TABLE IF NOT EXISTS cfrparts (
     document_id VARCHAR(50) NOT NULL PRIMARY KEY REFERENCES documents(document_id),
-    frDocNum VARCHAR(50), -- need to retrieve this and cfrPart from federal reserve
-    cfrPart VARCHAR(50) -- when a query occurs, checks to see if this is null --> if so use frDocNum to call API & retrieve cfr part to add to table
+    frDocNum VARCHAR(50), 
+    cfrPart VARCHAR(50)
 );
