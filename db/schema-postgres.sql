@@ -31,9 +31,11 @@ CREATE TABLE IF NOT EXISTS dockets (
 -- DOCUMENTS TABLE
 -- =========================================
 -- Stores document metadata; references dockets
+-- When a new document is added then a column in the CFR part table should be added
 
 CREATE TABLE IF NOT EXISTS documents (
     document_id VARCHAR(50) NOT NULL PRIMARY KEY,
+    docket_id VARCHAR(50) NOT NULL REFERENCES dockets (docket_id),
     document_api_link VARCHAR(2000) NOT NULL UNIQUE,
     address1 VARCHAR(200),
     address2 VARCHAR(200),
@@ -75,4 +77,15 @@ CREATE TABLE IF NOT EXISTS documents (
     topics VARCHAR(250)[],
     is_withdrawn BOOLEAN DEFAULT FALSE,
     postal_code VARCHAR(10)
+);
+
+-- =========================================
+-- CFR PARTS TABLE
+-- =========================================
+-- Stores cfr part numbers for corresponding documents; references documents
+
+CREATE TABLE IF NOT EXISTS cfrparts (
+    document_id VARCHAR(50) NOT NULL PRIMARY KEY REFERENCES documents(document_id),
+    frDocNum VARCHAR(50), -- need method to retrieve this from API team
+    cfrPart VARCHAR(50) -- when a query occurs, checks to see if this is null --> if so use frDocNum to call API & retrieve cfr part to add to table
 );
