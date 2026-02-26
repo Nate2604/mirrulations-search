@@ -31,7 +31,7 @@ createdb mirrulations
 
 Initialize schema (run the SQL schema file provided in the repository)
 ```bash
-psql -d mirrulations -f postgres.sql
+psql -d mirrulations -f schema-postgres.sql
 ```
 
 Open a psql session connected to `mirrulations`:
