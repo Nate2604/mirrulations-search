@@ -2,8 +2,8 @@
 Tests for the Flask app endpoints
 """
 # pylint: disable=redefined-outer-name
-import pytest
 import os
+import pytest
 from mock_db import MockDBLayer
 from mirrsearch.app import create_app
 

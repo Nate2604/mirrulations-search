@@ -24,7 +24,8 @@ def create_app(dist_dir=None, db_layer=None):
         if search_input is None:
             search_input = "example_query"
 
-        logic = InternalLogic("sample_database")
+        logic = InternalLogic("sample_database",
+                              db_layer=db_layer)
         return jsonify(logic.search(search_input,
                                     document_type_param,
                                     agency_param,
