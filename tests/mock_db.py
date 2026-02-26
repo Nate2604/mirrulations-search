@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 class MockDBLayer:
@@ -35,22 +35,31 @@ class MockDBLayer:
             },
         ]
 
-    def search(self, query: str, filter_param: str = None, agency: str = None) \
+    def search(self,
+            query: str,
+            document_type_param: Optional[str] = None,
+            agency: Optional[str]  = None,
+            cfr_part_param: Optional[str] = None) \
             -> List[Dict[str, Any]]:
         q = (query or "").strip().lower()
         results = [
             item for item in self._items()
             if q in item["title"].lower() or q in item["docket_id"].lower()
         ]
-        if filter_param:
+        if document_type_param:
             results = [
                 item for item in results
-                if item["document_type"].lower() == filter_param.lower()
+                if item["document_type"].lower() == document_type_param.lower()
             ]
         if agency:
             results = [
                 item for item in results
                 if item["agency_id"].lower() == agency.lower()
+            ]
+        if cfr_part_param:
+            results = [
+                item for item in results
+                if item["cfrPart"].lower() == cfr_part_param.lower()
             ]
         return results
 

@@ -19,12 +19,18 @@ class DBLayer:
     """
     conn: Any = None
 
-    def search(self, query: str, filter_param: str = None, agency: str = None) \
+    def search(
+            self,
+            query: str,
+            document_type_param: str = None,
+            agency:str = None,
+            cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
 
-        q = (query or "").strip()
+        q = (query or "").strip().lower()
+
         sql = """
             SELECT docket_id, title, cfr_part, agency_id, document_type
             FROM document
@@ -32,9 +38,13 @@ class DBLayer:
         """
         params = [f"%{q}%", f"%{q}%"] if q else ["%%", "%%"]
 
-        if filter_param:
+        if document_type_param:
             sql += " AND document_type = %s"
-            params.append(filter_param)
+            params.append(document_type_param)
+
+        if cfr_part_param:
+            sql += " AND cfr_part = %s"
+            params.append(cfr_part_param)
 
         if agency:
             sql += " AND agency_id ILIKE %s"
