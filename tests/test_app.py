@@ -2,8 +2,9 @@
 Tests for the Flask app endpoints
 """
 # pylint: disable=redefined-outer-name
-import os
 import pytest
+import os
+from mock_db import MockDBLayer
 from mirrsearch.app import create_app
 
 
@@ -13,7 +14,7 @@ def app(tmp_path):
     dist = tmp_path / "dist"
     dist.mkdir()
     (dist / "index.html").write_text("<html></html>")
-    test_app = create_app(dist_dir=str(dist))
+    test_app = create_app(dist_dir=str(dist), db_layer=MockDBLayer())
     test_app.config['TESTING'] = True
     return test_app
 
@@ -32,16 +33,12 @@ def test_home_endpoint(client):
 
 def test_search_endpoint_exists(client):
     """Test that the search endpoint exists and returns 200"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     response = client.get('/search/')
     assert response.status_code == 200
 
 
 def test_search_returns_list(client):
     """Test that search endpoint returns a list"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     response = client.get('/search/')
     assert response.status_code == 200
     # Flask will auto-convert the list to JSON
@@ -52,8 +49,6 @@ def test_search_returns_list(client):
 
 def test_search_returns_dummy_data(client):
     """Test that search endpoint returns expected data (dummy or Postgres)"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     response = client.get('/search/?str=ESRD')
     data = response.get_json()
     # Should return a list
@@ -67,8 +62,6 @@ def test_search_returns_dummy_data(client):
 
 def test_search_with_query_parameter(client):
     """Test that search endpoint accepts and returns query parameter"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     response = client.get('/search/?str=ESRD')
     data = response.get_json()
     # Should return a list
@@ -80,8 +73,6 @@ def test_search_with_query_parameter(client):
 
 def test_search_with_different_query_parameters(client):
     """Test search endpoint with various query strings"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     # Test with docket ID
     response1 = client.get('/search/?str=CMS-2025-024')
     data1 = response1.get_json()
@@ -104,22 +95,9 @@ def test_search_with_different_query_parameters(client):
     assert all(item['agency_id'] == 'CMS' for item in data3)
 
 
-@pytest.mark.integration
-def test_search_with_postgres_seed_data(client):
-    """Integration test: requires Postgres with seed data."""
-    if os.getenv("USE_POSTGRES", "").lower() not in {"1", "true", "yes", "on"}:
-        pytest.skip("Integration test requires USE_POSTGRES=true")
-    response = client.get('/search/?str=CMS-2025-0242')
-    data = response.get_json()
-    assert isinstance(data, list)
-    assert len(data) > 0
-    assert all(item['docket_id'] == 'CMS-2025-0242' for item in data)
-
 def test_search_without_filter_returns_all_matches(client):
     """Test that omitting the filter param returns all matching results
     regardless of document_type"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     response = client.get('/search/?str=renal')
     assert response.status_code == 200
     data = response.get_json()
@@ -186,8 +164,6 @@ def test_search_filter_is_case_insensitive(client):
 
 def test_search_filter_without_query_string_uses_default(client):
     """Test that filter works even when no str param is provided (falls back to default query)"""
-    if os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}:
-        pytest.skip("Unit tests expect dummy data")
     # No str param — app defaults to "example_query", which matches nothing in dummy data
     response = client.get('/search/?document_type=Proposed Rule')
     assert response.status_code == 200
@@ -211,3 +187,42 @@ def test_search_filter_result_structure(client):
     for item in data:
         for field in required_fields:
             assert field in item, f"Filtered result missing field: {field}"
+
+
+def test_search_with_agency_filter(client):
+    """Agency param restricts results to the specified agency_id"""
+    response = client.get('/search/?str=renal&agency=CMS')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+    assert all(item['agency_id'] == 'CMS' for item in data)
+
+
+def test_search_with_nonexistent_agency_returns_empty_list(client):
+    """An agency value matching no agency_id returns an empty list"""
+    response = client.get('/search/?str=renal&agency=FDA')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) == 0
+
+
+def test_search_agency_filter_is_case_insensitive(client):
+    """Agency filter comparison is case-insensitive"""
+    data_lower = client.get('/search/?str=renal&agency=cms').get_json()
+    data_upper = client.get('/search/?str=renal&agency=CMS').get_json()
+    assert len(data_lower) == len(data_upper)
+    assert data_lower == data_upper
+
+
+def test_search_with_agency_and_filter(client):
+    """Both agency and filter params can be combined"""
+    response = client.get('/search/?str=renal&agency=CMS&filter=Proposed Rule')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+    for item in data:
+        assert item['agency_id'] == 'CMS'
+        assert item['document_type'] == 'Proposed Rule'

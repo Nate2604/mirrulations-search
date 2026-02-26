@@ -54,6 +54,8 @@ class DBLayer:
             agency:str = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
+        if self.conn is None:
+            return []
 
         q = (query or "").strip().lower()
 
@@ -103,6 +105,7 @@ class DBLayer:
                 for row in cur.fetchall()
             ]
 
+
 def get_postgres_connection() -> DBLayer:
     if LOAD_DOTENV is not None:
         LOAD_DOTENV()
@@ -119,7 +122,6 @@ def get_postgres_connection() -> DBLayer:
 def get_db() -> DBLayer:
     """
     Return the default DB layer for the app.
-    Currently uses the in-memory dummy data for local/test usage.
     """
     if LOAD_DOTENV is not None:
         LOAD_DOTENV()
