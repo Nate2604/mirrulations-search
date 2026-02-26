@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "motion": "^12.34.3"
+  }
+}

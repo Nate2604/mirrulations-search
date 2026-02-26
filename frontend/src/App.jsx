@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import './styles/app.css'
 import { searchDockets } from './api/searchApi'
+import { motion } from "motion/react"
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+
 
 function CollapsibleSection({ title, defaultOpen = true, children, right }) {
     const [open, setOpen] = useState(defaultOpen);
@@ -130,7 +133,11 @@ export default function App() {
       </header>
 
       <div className="layout">
-        <aside className="sidebar">
+        <motion.aside 
+         initial={{ opacity: 0, y: -20 }}   
+         animate={{ opacity: 1, y: 0 }}     
+         transition={{ delay: 0.4 ,duration: 0.9, ease: "easeInOut" }}
+        className="sidebar">
           <button
             className="advHeader"
             onClick={() => setAdvOpen((v) => !v)}
@@ -262,20 +269,31 @@ export default function App() {
               </div>
             </div>
           )}
-        </aside>
+        </motion.aside>
 
         <main className="main">
-          <h1 className="title">Mirrulations Explorer</h1>
+          <motion.h1 className="title"
+          initial={{ opacity: 0, y: -20 }}   
+          animate={{ opacity: 1, y: 0 }}     
+          transition={{ delay: 0.8 ,duration: 0.9, ease: "easeInOut" }}
+          >Mirrulations Explorer</motion.h1>
 
           
-        <form className="searchBox" onSubmit={handleSubmit}>
+        <motion.form 
+        initial={{ opacity: 0, y: -20 }}   
+        animate={{ opacity: 1, y: 0 }}    
+        transition={{ delay: 1.2, duration: 1.5, ease: "easeInOut" }}
+        
+        className="searchBox" onSubmit={handleSubmit}>
             <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search query"
             />
-            <button type="submit" className="btn btn-primary">Search</button>
-        </form>
+            <button type="submit" className="search-btn btn btn-primary">
+            <MagnifyingGlassIcon size={24}/>
+            </button>
+        </motion.form>
 
           <div className="demoBox">
             <div className="demoTitle">Advanced filters (demo payload)</div>
