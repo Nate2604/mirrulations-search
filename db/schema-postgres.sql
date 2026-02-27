@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE TABLE IF NOT EXISTS cfrparts (
     document_id VARCHAR(50) NOT NULL PRIMARY KEY REFERENCES documents(document_id),
-    frDocNum VARCHAR(50), 
+    frDocNum VARCHAR(50),
     cfrPart VARCHAR(50)
 );
 
@@ -96,6 +96,6 @@ CREATE TABLE IF NOT EXISTS cfrparts (
 -- Stores links for corresponding cfr parts; references cfr parts
 
 CREATE TABLE IF NOT EXISTS links (
-    cfrPart VARCHAR(50) UNIQUE NOT NULL PRIMARY KEY REFERENCES cfrparts(cfrPart),
+    document_id VARCHAR(50) NOT NULL PRIMARY KEY REFERENCES cfrparts(document_id),
     link VARCHAR(2000)
 );
