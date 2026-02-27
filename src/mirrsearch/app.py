@@ -1,3 +1,4 @@
+"""Flask application with pagination via HTTP headers"""
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
@@ -6,7 +7,9 @@ from mirrsearch.internal_logic import InternalLogic
 def create_app(dist_dir=None, db_layer=None):
     """Create and configure Flask application"""
     if dist_dir is None:
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..')
+        )
         dist_dir = os.path.join(project_root, 'frontend', 'dist')
 
     flask_app = Flask(__name__, static_folder=dist_dir, static_url_path='')
@@ -16,7 +19,7 @@ def create_app(dist_dir=None, db_layer=None):
         return send_from_directory(dist_dir, "index.html")
 
     @flask_app.route("/search/")
-    def search():
+    def search():  # pylint: disable=too-many-locals,too-many-statements
         # Get search parameters
         search_input = request.args.get('str')
         document_type_param = request.args.get('document_type')
@@ -47,7 +50,16 @@ def create_app(dist_dir=None, db_layer=None):
             page_size=page_size
         )
 
-        return jsonify(result)
+        # Return just the list, but add pagination info to HTTP headers
+        response = jsonify(result['results'])
+        response.headers['X-Page'] = str(result['pagination']['page'])
+        response.headers['X-Page-Size'] = str(result['pagination']['page_size'])
+        response.headers['X-Total-Results'] = str(result['pagination']['total_results'])
+        response.headers['X-Total-Pages'] = str(result['pagination']['total_pages'])
+        response.headers['X-Has-Next'] = str(result['pagination']['has_next']).lower()
+        response.headers['X-Has-Prev'] = str(result['pagination']['has_prev']).lower()
+
+        return response
 
     return flask_app
 
@@ -55,4 +67,3 @@ app = create_app()
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)
-

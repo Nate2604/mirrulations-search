@@ -1,5 +1,5 @@
 """
-Tests for pagination functionality
+Tests for pagination functionality (header-based)
 """
 import pytest
 from mirrsearch.app import create_app
@@ -37,7 +37,15 @@ def client(app):  # pylint: disable=redefined-outer-name
     return app.test_client()
 
 
-# API Endpoint Tests
+# API Endpoint Tests - Header-based pagination
+
+def test_search_returns_list_not_dict(client):  # pylint: disable=redefined-outer-name
+    """Test search returns a list (not dict)"""
+    response = client.get('/search/?str=test')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+
 
 def test_search_default_pagination(client):  # pylint: disable=redefined-outer-name
     """Test search with default pagination (page 1, size 10)"""
@@ -45,13 +53,14 @@ def test_search_default_pagination(client):  # pylint: disable=redefined-outer-n
     assert response.status_code == 200
 
     data = response.get_json()
-    assert 'results' in data
-    assert 'pagination' in data
-    assert len(data['results']) == 10
-    assert data['pagination']['page'] == 1
-    assert data['pagination']['page_size'] == 10
-    assert data['pagination']['total_results'] == 25
-    assert data['pagination']['total_pages'] == 3
+    assert isinstance(data, list)
+    assert len(data) == 10
+
+    # Check headers
+    assert response.headers['X-Page'] == '1'
+    assert response.headers['X-Page-Size'] == '10'
+    assert response.headers['X-Total-Results'] == '25'
+    assert response.headers['X-Total-Pages'] == '3'
 
 
 def test_search_page_2(client):  # pylint: disable=redefined-outer-name
@@ -59,10 +68,10 @@ def test_search_page_2(client):  # pylint: disable=redefined-outer-name
     response = client.get('/search/?str=test&page=2')
     data = response.get_json()
 
-    assert len(data['results']) == 10
-    assert data['pagination']['page'] == 2
-    assert data['pagination']['has_prev'] is True
-    assert data['pagination']['has_next'] is True
+    assert len(data) == 10
+    assert response.headers['X-Page'] == '2'
+    assert response.headers['X-Has-Prev'] == 'true'
+    assert response.headers['X-Has-Next'] == 'true'
 
 
 def test_search_last_page(client):  # pylint: disable=redefined-outer-name
@@ -70,10 +79,10 @@ def test_search_last_page(client):  # pylint: disable=redefined-outer-name
     response = client.get('/search/?str=test&page=3')
     data = response.get_json()
 
-    assert len(data['results']) == 5
-    assert data['pagination']['page'] == 3
-    assert data['pagination']['has_next'] is False
-    assert data['pagination']['has_prev'] is True
+    assert len(data) == 5
+    assert response.headers['X-Page'] == '3'
+    assert response.headers['X-Has-Next'] == 'false'
+    assert response.headers['X-Has-Prev'] == 'true'
 
 
 def test_search_custom_page_size(client):  # pylint: disable=redefined-outer-name
@@ -81,25 +90,23 @@ def test_search_custom_page_size(client):  # pylint: disable=redefined-outer-nam
     response = client.get('/search/?str=test&page_size=5')
     data = response.get_json()
 
-    assert len(data['results']) == 5
-    assert data['pagination']['page_size'] == 5
-    assert data['pagination']['total_pages'] == 5
+    assert len(data) == 5
+    assert response.headers['X-Page-Size'] == '5'
+    assert response.headers['X-Total-Pages'] == '5'
 
 
 def test_search_invalid_page_number(client):  # pylint: disable=redefined-outer-name
     """Test that invalid page numbers are handled"""
     response = client.get('/search/?str=test&page=0')
-    data = response.get_json()
 
-    assert data['pagination']['page'] == 1
+    assert response.headers['X-Page'] == '1'
 
 
 def test_search_page_size_too_large(client):  # pylint: disable=redefined-outer-name
     """Test that page size is capped at 100"""
     response = client.get('/search/?str=test&page_size=999')
-    data = response.get_json()
 
-    assert data['pagination']['page_size'] == 10
+    assert response.headers['X-Page-Size'] == '10'
 
 
 def test_search_empty_page(client):  # pylint: disable=redefined-outer-name
@@ -107,11 +114,11 @@ def test_search_empty_page(client):  # pylint: disable=redefined-outer-name
     response = client.get('/search/?str=test&page=999')
     data = response.get_json()
 
-    assert len(data['results']) == 0
-    assert data['pagination']['page'] == 999
+    assert len(data) == 0
+    assert response.headers['X-Page'] == '999'
 
 
-# InternalLogic Unit Tests
+# InternalLogic Unit Tests - These stay the same (internal logic still returns dict)
 
 def test_internal_logic_pagination():
     """Test InternalLogic pagination directly"""

@@ -1,8 +1,12 @@
 """
-Tests for the Flask app endpoints - Updated for pagination
+Tests for the Flask app endpoints - Header-based pagination (returns list)
 """
+import tempfile
+import os
+from unittest.mock import patch, MagicMock
 import pytest
 from mirrsearch.app import create_app
+from mirrsearch.db import get_postgres_connection, get_opensearch_connection
 
 
 @pytest.fixture
@@ -19,60 +23,50 @@ def client(app):  # pylint: disable=redefined-outer-name
     return app.test_client()
 
 
-# def test_hello_world(client):  # pylint: disable=redefined-outer-name
-#     """Test the home endpoint returns index.html"""
-#     response = client.get('/')
-#     assert response.status_code == 200
-
-
 def test_search_endpoint_exists(client):  # pylint: disable=redefined-outer-name
     """Test that the search endpoint exists and returns 200"""
     response = client.get('/search/')
     assert response.status_code == 200
 
 
-def test_search_returns_dict_with_pagination(client):  # pylint: disable=redefined-outer-name
-    """Test that search endpoint returns dict with results and pagination"""
+def test_search_returns_list(client):  # pylint: disable=redefined-outer-name
+    """Test that search endpoint returns a list (not dict)"""
     response = client.get('/search/')
     assert response.status_code == 200
     assert response.is_json
     data = response.get_json()
-    assert isinstance(data, dict)
-    assert 'results' in data
-    assert 'pagination' in data
-    assert isinstance(data['results'], list)
+    assert isinstance(data, list)
 
 
-def test_search_pagination_metadata(client):  # pylint: disable=redefined-outer-name
-    """Test that pagination metadata is present and correct"""
+def test_search_has_pagination_headers(client):  # pylint: disable=redefined-outer-name
+    """Test that pagination metadata is in HTTP headers"""
     response = client.get('/search/')
-    data = response.get_json()
-    pagination = data['pagination']
-    assert 'page' in pagination
-    assert 'page_size' in pagination
-    assert 'total_results' in pagination
-    assert 'total_pages' in pagination
-    assert 'has_next' in pagination
-    assert 'has_prev' in pagination
+
+    # All pagination headers should be present
+    assert 'X-Page' in response.headers
+    assert 'X-Page-Size' in response.headers
+    assert 'X-Total-Results' in response.headers
+    assert 'X-Total-Pages' in response.headers
+    assert 'X-Has-Next' in response.headers
+    assert 'X-Has-Prev' in response.headers
 
 
 def test_search_with_query_parameter(client):  # pylint: disable=redefined-outer-name
     """Test search endpoint with query parameter"""
     response = client.get('/search/?str=test_search')
     data = response.get_json()
-    assert 'results' in data
-    assert isinstance(data['results'], list)
+    assert isinstance(data, list)
 
 
 def test_search_with_different_query_parameters(client):  # pylint: disable=redefined-outer-name
     """Test search endpoint with various query parameters"""
     response = client.get('/search/?str=users')
     data = response.get_json()
-    assert 'results' in data
+    assert isinstance(data, list)
 
     response = client.get('/search/?str=find_all_documents')
     data = response.get_json()
-    assert 'results' in data
+    assert isinstance(data, list)
 
 
 def test_search_without_filter_returns_all_matches(client):  # pylint: disable=redefined-outer-name
@@ -80,9 +74,7 @@ def test_search_without_filter_returns_all_matches(client):  # pylint: disable=r
     response = client.get('/search/?str=renal')
     assert response.status_code == 200
     data = response.get_json()
-    assert 'results' in data
-    results = data['results']
-    assert isinstance(results, list)
+    assert isinstance(data, list)
 
 
 def test_search_with_valid_filter_returns_matching_document_type(client):  # pylint: disable=redefined-outer-name
@@ -90,9 +82,8 @@ def test_search_with_valid_filter_returns_matching_document_type(client):  # pyl
     response = client.get('/search/?str=renal&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
-    results = data['results']
-    assert isinstance(results, list)
-    for doc in results:
+    assert isinstance(data, list)
+    for doc in data:
         assert doc['document_type'] == 'Proposed Rule'
 
 
@@ -101,8 +92,7 @@ def test_search_with_filter_only_affects_document_type(client):  # pylint: disab
     response = client.get('/search/?str=renal&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
-    results = data['results']
-    assert isinstance(results, list)
+    assert isinstance(data, list)
 
 
 def test_search_with_nonexistent_filter_returns_empty_list(client):  # pylint: disable=redefined-outer-name
@@ -110,9 +100,8 @@ def test_search_with_nonexistent_filter_returns_empty_list(client):  # pylint: d
     response = client.get('/search/?str=renal&document_type=Notice')
     assert response.status_code == 200
     data = response.get_json()
-    results = data['results']
-    assert isinstance(results, list)
-    assert len(results) == 0
+    assert isinstance(data, list)
+    assert len(data) == 0
 
 
 def test_search_filter_without_query_string_uses_default(client):  # pylint: disable=redefined-outer-name
@@ -120,8 +109,7 @@ def test_search_filter_without_query_string_uses_default(client):  # pylint: dis
     response = client.get('/search/?document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
-    results = data['results']
-    assert isinstance(results, list)
+    assert isinstance(data, list)
 
 
 def test_search_filter_result_structure(client):  # pylint: disable=redefined-outer-name
@@ -129,10 +117,9 @@ def test_search_filter_result_structure(client):  # pylint: disable=redefined-ou
     response = client.get('/search/?str=renal&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
-    results = data['results']
-    assert isinstance(results, list)
-    if len(results) > 0:
-        doc = results[0]
+    assert isinstance(data, list)
+    if len(data) > 0:
+        doc = data[0]
         assert 'document_type' in doc
 
 
@@ -141,10 +128,8 @@ def test_search_with_agency_filter(client):  # pylint: disable=redefined-outer-n
     response = client.get('/search/?str=renal&agency=CMS')
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, dict)
-    results = data['results']
-    assert isinstance(results, list)
-    for doc in results:
+    assert isinstance(data, list)
+    for doc in data:
         assert doc['agency_id'] == 'CMS'
 
 
@@ -153,10 +138,8 @@ def test_search_with_nonexistent_agency_returns_empty_list(client):  # pylint: d
     response = client.get('/search/?str=renal&agency=FDA')
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, dict)
-    results = data['results']
-    assert isinstance(results, list)
-    assert len(results) == 0
+    assert isinstance(data, list)
+    assert len(data) == 0
 
 
 def test_search_with_agency_and_filter(client):  # pylint: disable=redefined-outer-name
@@ -164,10 +147,49 @@ def test_search_with_agency_and_filter(client):  # pylint: disable=redefined-out
     response = client.get('/search/?str=renal&agency=CMS&document_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, dict)
-    results = data['results']
-    assert isinstance(results, list)
-    for doc in results:
+    assert isinstance(data, list)
+    for doc in data:
         assert doc['agency_id'] == 'CMS'
         assert doc['document_type'] == 'Proposed Rule'
 
+
+# Additional tests for 100% coverage
+
+def test_home_route_with_index_html():
+    """Test home route serves index.html - covers app.py line 16"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        index_path = os.path.join(tmpdir, 'index.html')
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write('<html><body>Home</body></html>')
+
+        test_app = create_app(dist_dir=tmpdir)
+        test_client = test_app.test_client()
+
+        response = test_client.get('/')
+        assert response.status_code == 200
+        assert b'Home' in response.data
+
+
+@patch('mirrsearch.db.psycopg2.connect')
+def test_get_postgres_connection(mock_connect):
+    """Test postgres connection - covers db.py lines 46-47"""
+    mock_conn = MagicMock()
+    mock_connect.return_value = mock_conn
+
+    with patch.dict(os.environ, {
+        'DB_HOST': 'localhost',
+        'DB_PORT': '5432',
+        'DB_NAME': 'test',
+        'DB_USER': 'test',
+        'DB_PASSWORD': 'test'
+    }):
+        result = get_postgres_connection()
+        assert result.conn == mock_conn
+        mock_connect.assert_called_once()
+
+
+@patch('mirrsearch.db.OpenSearch')
+def test_get_opensearch_connection(mock_opensearch):
+    """Test opensearch connection - covers db.py line 89"""
+    get_opensearch_connection()
+    mock_opensearch.assert_called_once()
