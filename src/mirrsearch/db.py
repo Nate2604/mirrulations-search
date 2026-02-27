@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 import re
 import json
 from dataclasses import dataclass
