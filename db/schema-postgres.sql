@@ -89,3 +89,13 @@ CREATE TABLE IF NOT EXISTS cfrparts (
     frDocNum VARCHAR(50), 
     cfrPart VARCHAR(50)
 );
+
+-- =========================================
+-- LINKS TABLE
+-- =========================================
+-- Stores links for corresponding cfr parts; references cfr parts
+
+CREATE TABLE IF NOT EXISTS links (
+    cfrPart VARCHAR(50) UNIQUE NOT NULL PRIMARY KEY REFERENCES cfrparts(cfrPart),
+    link VARCHAR(2000)
+);
