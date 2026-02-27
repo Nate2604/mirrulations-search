@@ -21,9 +21,6 @@ else:
 
 @dataclass(frozen=True)
 class DBLayer:
-    """
-    DB layer for connecting to PostgreSQL and returning data.
-    """
     conn: Any = None
 
     def _items(self) -> List[Dict[str, Any]]:
