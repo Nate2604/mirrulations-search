@@ -50,9 +50,6 @@ python app.py
 ```
 
 ## Run with Gunicorn using the Postgres database
-You must run ./db/setup_postgres.sh before to have created the actual database.
-This also requires python-dotenv to be intalled which is now added in the requirements.txt file.
-Or run pip install python-dotenv in your .venv.
 
 Create a `.env` file in the root directory with the following variables:
 ```bash
@@ -63,6 +60,13 @@ DB_USER=your_macOS_username (You can find this by doing `whoami` in your termina
 DB_PASSWORD=
 USE_POSTGRES=true
 ```
+
+You must run ./db/setup_postgres.sh before to have created the actual database.
+
+This also requires python-dotenv to be intalled which is now added in the requirements.txt file.
+
+Or run pip install python-dotenv in your .venv.
+
 Then run:
 ```bash
 ./dev_up.sh
