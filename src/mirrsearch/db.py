@@ -29,15 +29,15 @@ class DBLayer:
         if self.conn is None:
             return []
 
-        q = (query or "").strip().lower()
-
         sql = """
             SELECT d.docket_id, d.document_title, c.cfrpart, d.agency_id, d.document_type
             FROM documents d
             LEFT JOIN cfrparts c ON d.document_id = c.document_id
             WHERE (d.docket_id ILIKE %s OR d.document_title ILIKE %s)
         """
-        params = [f"%{q}%", f"%{q}%"] if q else ["%%", "%%"]
+        params = ([f"%{(query or '').strip().lower()}%"] * 2
+                  if (query or "").strip()
+                  else ["%%", "%%"])
 
         if document_type_param:
             sql += " AND d.document_type = %s"
