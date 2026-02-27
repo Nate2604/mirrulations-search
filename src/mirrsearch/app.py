@@ -17,14 +17,19 @@ def create_app(dist_dir=None, db_layer=None):
     @flask_app.route("/search/")
     def search():
         search_input = request.args.get('str')
-        filter_param = request.args.get('filter') # e.g. /search/?str=renal&filter=Proposed Rule
+        document_type_param = request.args.get('document_type')
         agency_param = request.args.get('agency')
+        cfr_part_param = request.args.get('cfr_part')
 
         if search_input is None:
             search_input = "example_query"
 
-        logic = InternalLogic("sample_database", db_layer=db_layer)
-        return jsonify(logic.search(search_input, filter_param, agency_param))
+        logic = InternalLogic("sample_database",
+                              db_layer=db_layer)
+        return jsonify(logic.search(search_input,
+                                    document_type_param,
+                                    agency_param,
+                                    cfr_part_param))
 
     return flask_app
 
