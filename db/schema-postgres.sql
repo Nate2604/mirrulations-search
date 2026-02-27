@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS dockets (
 
 CREATE TABLE IF NOT EXISTS documents (
     document_id VARCHAR(50) NOT NULL PRIMARY KEY,
-    docket_id VARCHAR(50) NOT NULL REFERENCES dockets (docket_id),
+    docket_id VARCHAR(50) NOT NULL,
     document_api_link VARCHAR(2000) NOT NULL UNIQUE,
     address1 VARCHAR(200),
     address2 VARCHAR(200),
@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS documents (
     comment_end_date TIMESTAMP WITH TIME ZONE,
     comment_start_date TIMESTAMP WITH TIME ZONE,
     country VARCHAR(100),
-    docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
     document_type CHAR(30) NOT NULL,
     effective_date TIMESTAMP WITH TIME ZONE,
     email VARCHAR(320),
