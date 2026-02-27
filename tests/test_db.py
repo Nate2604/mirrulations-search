@@ -221,10 +221,10 @@ def test_get_postgres_connection_uses_aws_secrets(monkeypatch):
     }
 
     class FakeClient:  # pylint: disable=too-few-public-methods
-        def get_secret_value(self, **kwargs):
+        def get_secret_value(self, **_kwargs):  # pylint: disable=unused-argument
             return {"SecretString": __import__("json").dumps(fake_creds)}
 
-        def describe_secret(self, **kwargs):
+        def describe_secret(self, **_kwargs):  # pylint: disable=unused-argument
             return {}
 
     fake_boto3 = type("boto3", (), {"client": staticmethod(lambda *a, **kw: FakeClient())})()
