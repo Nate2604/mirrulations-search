@@ -11,7 +11,6 @@ elif command -v systemctl &>/dev/null; then
         sudo systemctl start "$svc" 2>/dev/null && break
     done
     run_pg() { sudo -u postgres "$@"; }
-    # Linux: allow app (runs as root) to connect via localhost. ident fails for root->postgres.
     PGDATA=$(sudo -u postgres psql -t -A -c "SHOW data_directory" 2>/dev/null | tr -d '[:space:]')
     PGHBA="${PGDATA}/pg_hba.conf"
     if [[ -n "$PGHBA" && -f "$PGHBA" ]]; then
@@ -33,7 +32,7 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
 
 #TODO: Change so database doesn't get dropped when prod ready.
-
+# `run_pg` is a function that runs a command as the proper user on Linux, and as the current user on Mac.
 echo "Dropping database if it exists..."
 run_pg dropdb --if-exists $DB_NAME
 
