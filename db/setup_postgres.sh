@@ -11,6 +11,18 @@ elif command -v systemctl &>/dev/null; then
         sudo systemctl start "$svc" 2>/dev/null && break
     done
     run_pg() { sudo -u postgres "$@"; }
+    # Linux: allow app (runs as root) to connect via localhost. ident fails for root->postgres.
+    PGDATA=$(sudo -u postgres psql -t -A -c "SHOW data_directory" 2>/dev/null | tr -d ' ')
+    PGHBA="${PGDATA}/pg_hba.conf"
+    if [[ -n "$PGHBA" && -f "$PGHBA" ]]; then
+        if grep -q "127.0.0.1/32.*ident" "$PGHBA" 2>/dev/null; then
+            sudo sed -i.bak '/127\.0\.0\.1\/32/s/ident$/md5/' "$PGHBA"
+            run_pg psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || true
+            for svc in postgresql postgresql-14 postgresql-15 postgresql-16 postgresql-17; do
+                sudo systemctl reload "$svc" 2>/dev/null && break
+            done
+        fi
+    fi
 else
     run_pg() { "$@"; }
 fi
