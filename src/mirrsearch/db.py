@@ -1,5 +1,4 @@
 # pylint: disable=duplicate-code
-import re
 import json
 from dataclasses import dataclass
 from typing import List, Dict, Any
@@ -24,24 +23,6 @@ else:
 class DBLayer:
     conn: Any = None
 
-    def _items(self) -> List[Dict[str, Any]]:
-        return [
-            {
-                "docket_id": "CMS-2025-0240",
-                "title": "ESRD Prospective Payment System Proposed Rule",
-                "cfrPart": "42",
-                "agency_id": "CMS",
-                "document_type": "Proposed Rule",
-            },
-            {
-                "docket_id": "CMS-2025-0240",
-                "title": "Medicare Quality Incentive Program for End-Stage Renal Disease",
-                "cfrPart": "42",
-                "agency_id": "CMS",
-                "document_type": "Proposed Rule",
-            },
-        ]
-
     def search(
             self,
             query: str,
@@ -49,41 +30,9 @@ class DBLayer:
             agency: str = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
-        if self.conn is not None:
-            return self._search_postgres(query, document_type_param, agency, cfr_part_param)
-        return self._search_dummy(query, document_type_param, agency, cfr_part_param)
-
-    def _search_dummy(
-            self,
-            query: str,
-            document_type_param: str = None,
-            agency: str = None,
-            cfr_part_param: str = None) \
-            -> List[Dict[str, Any]]:
-        q = re.sub(r'[^\w\s-]', '', (query or "")).strip().lower()
-        results = [
-            item for item in self._items()
-            if not q
-            or q in item["docket_id"].lower()
-            or q in item["title"].lower()
-            or q in item["agency_id"].lower()
-        ]
-        if document_type_param:
-            results = [
-                item for item in results
-                if item["document_type"].lower() == document_type_param.lower()
-            ]
-        if agency:
-            results = [
-                item for item in results
-                if agency.lower() in item["agency_id"].lower()
-            ]
-        if cfr_part_param:
-            results = [
-                item for item in results
-                if item["cfrPart"] == cfr_part_param
-            ]
-        return results
+        if self.conn is None:
+            return []
+        return self._search_postgres(query, document_type_param, agency, cfr_part_param)
 
     def _search_postgres(
             self,
@@ -107,8 +56,8 @@ class DBLayer:
             params.append(document_type_param)
 
         if cfr_part_param:
-            sql += " AND c.cfrpart = %s"
-            params.append(cfr_part_param)
+            sql += " AND c.cfrpart ILIKE %s"
+            params.append(f"%{cfr_part_param}%")
 
         if agency:
             sql += " AND d.agency_id ILIKE %s"
