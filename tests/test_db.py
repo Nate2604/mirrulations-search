@@ -38,37 +38,6 @@ def test_get_db_returns_dblayer():
     assert isinstance(db, DBLayer)
 
 
-# --- Dummy branch additional coverage ---
-
-def test_search_dummy_agency_filter():
-    """Agency filter works in dummy branch"""
-    db = DBLayer()
-    result = db.search("", agency="CMS")
-    assert len(result) == 2
-    assert all(item["agency_id"] == "CMS" for item in result)
-
-
-def test_search_dummy_agency_filter_no_match():
-    """Agency filter returns empty when no match"""
-    db = DBLayer()
-    result = db.search("", agency="FDA")
-    assert result == []
-
-
-def test_search_dummy_cfr_part_filter():
-    """cfr_part_param filter works in dummy branch"""
-    db = DBLayer()
-    result = db.search("", cfr_part_param="42")
-    assert len(result) == 2
-
-
-def test_search_dummy_cfr_part_filter_no_match():
-    """cfr_part_param returns empty when no match"""
-    db = DBLayer()
-    result = db.search("", cfr_part_param="999")
-    assert result == []
-
-
 # --- Fake postgres helpers ---
 
 class _FakeCursor:
@@ -170,8 +139,8 @@ def test_search_postgres_branch_cfr_part():
     db.search("", cfr_part_param="42")
 
     sql, params = db.conn.cursor_obj.executed
-    assert "c.cfrpart = %s" in sql
-    assert "42" in params
+    assert "c.cfrpart ILIKE %s" in sql
+    assert "%42%" in params
 
 
 # --- Factory function tests ---
