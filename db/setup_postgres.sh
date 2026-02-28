@@ -2,22 +2,36 @@
 
 DB_NAME="mirrulations"
 
-echo "Starting PostgreSQL..."
-brew services start postgresql
+# Start Postgres (Mac/Homebrew vs Linux/systemctl)
+if command -v brew &>/dev/null; then
+    brew services start postgresql
+    run_pg() { "$@"; }
+elif command -v systemctl &>/dev/null; then
+    for svc in postgresql postgresql-15 postgresql-16 postgresql-17 postgresql15 postgresql16 postgresql17; do
+        sudo systemctl start "$svc" 2>/dev/null && break
+    done
+    run_pg() { sudo -u postgres "$@"; }
+else
+    run_pg() { "$@"; }
+fi
+
+# Paths: script lives in db/, schema is db/schema-postgres.sql
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
 
 #TODO: Change so database doesn't get dropped when prod ready.
 
 echo "Dropping database if it exists..."
-dropdb --if-exists $DB_NAME
+run_pg dropdb --if-exists $DB_NAME
 
 echo "Creating database..."
-createdb $DB_NAME
+run_pg createdb $DB_NAME
 
 echo "Creating schema..."
-psql -d $DB_NAME -f db/schema-postgres.sql
+run_pg psql -d $DB_NAME -f "$ROOT_DIR/db/schema-postgres.sql"
 
 echo "Inserting seed data..."
-psql $DB_NAME <<'EOF'
+run_pg psql $DB_NAME <<'EOF'
 
 INSERT INTO documents (
     document_id,
