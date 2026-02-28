@@ -11,16 +11,20 @@ cd "${PROJECT_ROOT}"
 [[ -f .env ]] && source .env
 DB_HOST="${DB_HOST:-localhost}"
 
-# Install Postgres client (always needed)
-if ! command -v psql &>/dev/null; then
-    sudo yum install -y postgresql
+# Install Postgres (AL2: amazon-linux-extras + yum; AL2023: dnf)
+if ! command -v psql &>/dev/null || [[ "$DB_HOST" == "localhost" || "$DB_HOST" == "127.0.0.1" ]]; then
+    if command -v amazon-linux-extras &>/dev/null; then
+        sudo amazon-linux-extras enable postgresql14
+        sudo yum install -y postgresql-server postgresql
+    else
+        sudo dnf install -y postgresql15 postgresql15-server
+    fi
 fi
 
-# Local Postgres: install server, ensure running, setup DB if needed
+# Local Postgres: ensure running, setup DB if needed
 if [[ "$DB_HOST" == "localhost" || "$DB_HOST" == "127.0.0.1" ]]; then
-    sudo yum install -y postgresql-server postgresql
-    sudo postgresql-setup initdb 2>/dev/null || sudo /usr/bin/postgresql-setup --initdb 2>/dev/null || true
-    for svc in postgresql postgresql-15 postgresql-16 postgresql-17 postgresql15 postgresql16 postgresql17; do
+    sudo postgresql-setup --initdb 2>/dev/null || sudo postgresql-setup initdb 2>/dev/null || true
+    for svc in postgresql postgresql-14 postgresql-15 postgresql-16 postgresql-17; do
         sudo systemctl start "$svc" 2>/dev/null && break
     done
     if ! psql -lqt postgres 2>/dev/null | grep -qw mirrulations; then

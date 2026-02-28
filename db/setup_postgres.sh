@@ -7,7 +7,7 @@ if command -v brew &>/dev/null; then
     brew services start postgresql
     run_pg() { "$@"; }
 elif command -v systemctl &>/dev/null; then
-    for svc in postgresql postgresql-15 postgresql-16 postgresql-17 postgresql15 postgresql16 postgresql17; do
+    for svc in postgresql postgresql-14 postgresql-15 postgresql-16 postgresql-17; do
         sudo systemctl start "$svc" 2>/dev/null && break
     done
     run_pg() { sudo -u postgres "$@"; }
