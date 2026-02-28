@@ -4,6 +4,37 @@ from flask import Flask, request, jsonify, send_from_directory
 from mirrsearch.internal_logic import InternalLogic
 
 
+def _get_search_params():
+    """Extract and validate search parameters from the request."""
+    return {
+        'search_input': request.args.get('str') or 'example_query',
+        'document_type': request.args.get('document_type'),
+        'agency': request.args.get('agency'),
+        'cfr_part': request.args.get('cfr_part'),
+    }
+
+
+def _get_pagination_params():
+    """Extract and validate pagination parameters from the request."""
+    page = max(request.args.get('page', default=1, type=int), 1)
+    page_size = request.args.get('page_size', default=10, type=int)
+    if page_size < 1 or page_size > 100:
+        page_size = 10
+    return page, page_size
+
+
+def _build_paginated_response(results, pagination):
+    """Build a JSON response with pagination metadata in HTTP headers."""
+    response = jsonify(results)
+    response.headers['X-Page'] = str(pagination['page'])
+    response.headers['X-Page-Size'] = str(pagination['page_size'])
+    response.headers['X-Total-Results'] = str(pagination['total_results'])
+    response.headers['X-Total-Pages'] = str(pagination['total_pages'])
+    response.headers['X-Has-Next'] = str(pagination['has_next']).lower()
+    response.headers['X-Has-Prev'] = str(pagination['has_prev']).lower()
+    return response
+
+
 def create_app(dist_dir=None, db_layer=None):
     """Create and configure Flask application"""
     if dist_dir is None:
@@ -19,47 +50,21 @@ def create_app(dist_dir=None, db_layer=None):
         return send_from_directory(dist_dir, "index.html")
 
     @flask_app.route("/search/")
-    def search():  # pylint: disable=too-many-locals,too-many-statements
-        # Get search parameters
-        search_input = request.args.get('str')
-        document_type_param = request.args.get('document_type')
-        agency_param = request.args.get('agency')
-        cfr_part_param = request.args.get('cfr_part')
-
-        # Get pagination parameters with defaults
-        page = request.args.get('page', default=1, type=int)
-        page_size = request.args.get('page_size', default=10, type=int)
-
-        # Validate pagination parameters
-        page = max(page, 1)
-        if page_size < 1 or page_size > 100:
-            page_size = 10
-
-        if search_input is None:
-            search_input = "example_query"
+    def search():
+        params = _get_search_params()
+        page, page_size = _get_pagination_params()
 
         logic = InternalLogic("sample_database", db_layer=db_layer)
-
-        # Get paginated results
         result = logic.search(
-            search_input,
-            document_type_param,
-            agency_param,
-            cfr_part_param,
+            params['search_input'],
+            params['document_type'],
+            params['agency'],
+            params['cfr_part'],
             page=page,
             page_size=page_size
         )
 
-        # Return just the list, but add pagination info to HTTP headers
-        response = jsonify(result['results'])
-        response.headers['X-Page'] = str(result['pagination']['page'])
-        response.headers['X-Page-Size'] = str(result['pagination']['page_size'])
-        response.headers['X-Total-Results'] = str(result['pagination']['total_results'])
-        response.headers['X-Total-Pages'] = str(result['pagination']['total_pages'])
-        response.headers['X-Has-Next'] = str(result['pagination']['has_next']).lower()
-        response.headers['X-Has-Prev'] = str(result['pagination']['has_prev']).lower()
-
-        return response
+        return _build_paginated_response(result['results'], result['pagination'])
 
     return flask_app
 
