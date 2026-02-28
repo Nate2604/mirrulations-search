@@ -7,6 +7,27 @@ DOMAIN="dev.mirrulations.org"
 
 cd "${PROJECT_ROOT}"
 
+# Load .env for DB_HOST check
+[[ -f .env ]] && source .env
+DB_HOST="${DB_HOST:-localhost}"
+
+# Install Postgres client (always needed)
+if ! command -v psql &>/dev/null; then
+    sudo yum install -y postgresql
+fi
+
+# Local Postgres: install server, ensure running, setup DB if needed
+if [[ "$DB_HOST" == "localhost" || "$DB_HOST" == "127.0.0.1" ]]; then
+    sudo yum install -y postgresql-server postgresql
+    sudo postgresql-setup initdb 2>/dev/null || sudo /usr/bin/postgresql-setup --initdb 2>/dev/null || true
+    for svc in postgresql postgresql-15 postgresql-16 postgresql-17 postgresql15 postgresql16 postgresql17; do
+        sudo systemctl start "$svc" 2>/dev/null && break
+    done
+    if ! psql -lqt postgres 2>/dev/null | grep -qw mirrulations; then
+        ./db/setup_postgres.sh
+    fi
+fi
+
 if ! command -v node &>/dev/null; then
     curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
     sudo yum install -y nodejs
