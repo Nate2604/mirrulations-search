@@ -7,6 +7,19 @@ DOMAIN="dev.mirrulations.org"
 
 cd "${PROJECT_ROOT}"
 
+# Create .env if missing
+if [[ ! -f .env ]]; then
+    cat > .env <<'ENVEOF'
+USE_POSTGRES=1
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=mirrulations
+DB_USER=postgres
+DB_PASSWORD=
+ENVEOF
+    echo "Created .env with defaults (edit for RDS or custom credentials)"
+fi
+
 # Load .env for DB_HOST check
 [[ -f .env ]] && source .env
 DB_HOST="${DB_HOST:-localhost}"
