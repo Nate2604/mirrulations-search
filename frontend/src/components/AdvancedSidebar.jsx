@@ -47,7 +47,7 @@ export default function AdvancedSidebar({
   applyAdvanced,
   activeCount,
 }) {
-  const docTypes = ["Proposed Rule", "Final Rule", "Notice"];
+  const docTypes = ["Rulemaking", "Non-Rulemaking"];
   const statuses = ["Open", "Closed", "Pending"];
   const cfrParts = Array.from({ length: 50 }, (_, i) => i + 1);
 
@@ -184,7 +184,7 @@ export default function AdvancedSidebar({
 
           {/* Doc type */}
           <section className="section">
-            <h3>Document Type</h3>
+            <h3>Docket Type</h3>
             {docTypes.map((t) => (
               <label key={t} className="check">
                 <input
