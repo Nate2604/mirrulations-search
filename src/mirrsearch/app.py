@@ -68,6 +68,7 @@ def create_app(dist_dir=None, db_layer=None):
 
     return flask_app
 
+
 app = create_app()
 
 if __name__ == '__main__':

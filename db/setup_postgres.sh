@@ -2,70 +2,75 @@
 
 DB_NAME="mirrulations"
 
-echo "Starting PostgreSQL..."
-brew services start postgresql
+# Start Postgres (Mac/Homebrew vs Linux/systemctl)
+if command -v brew &>/dev/null; then
+    brew services start postgresql
+    run_pg() { "$@"; }
+elif command -v systemctl &>/dev/null; then
+    for svc in postgresql postgresql-14 postgresql-15 postgresql-16 postgresql-17; do
+        sudo systemctl start "$svc" 2>/dev/null && break
+    done
+    run_pg() { sudo -u postgres "$@"; }
+    PGDATA=$(sudo -u postgres psql -t -A -c "SHOW data_directory" 2>/dev/null | tr -d '[:space:]')
+    PGHBA="${PGDATA}/pg_hba.conf"
+    if [[ -n "$PGHBA" && -f "$PGHBA" ]]; then
+        if grep -q "127.0.0.1/32.*ident" "$PGHBA" 2>/dev/null; then
+            sudo sed -i.bak '/127\.0\.0\.1\/32/s/ident$/md5/' "$PGHBA"
+            grep -q "::1/128.*ident" "$PGHBA" 2>/dev/null && sudo sed -i.bak '/::1\/128/s/ident$/md5/' "$PGHBA" || true
+            run_pg psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || true
+            for svc in postgresql postgresql-14 postgresql-15 postgresql-16 postgresql-17; do
+                sudo systemctl reload "$svc" 2>/dev/null && break
+            done
+        fi
+    fi
+else
+    run_pg() { "$@"; }
+fi
+
+# Paths: script lives in db/, schema is db/schema-postgres.sql
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
 
 #TODO: Change so database doesn't get dropped when prod ready.
-
+# `run_pg` is a function that runs a command as the proper user on Linux, and as the current user on Mac.
 echo "Dropping database if it exists..."
-dropdb --if-exists $DB_NAME
+run_pg dropdb --if-exists $DB_NAME
 
 echo "Creating database..."
-createdb $DB_NAME
+run_pg createdb $DB_NAME
 
-echo "Creating schema and inserting seed data..."
+echo "Creating schema..."
+run_pg psql -d $DB_NAME -f "$ROOT_DIR/db/schema-postgres.sql"
 
-psql $DB_NAME <<'EOF'
+echo "Inserting seed data..."
+run_pg psql $DB_NAME <<'EOF'
 
--- Enable expanded display
-\x
-
--- =========================
--- Create document table
--- =========================
-CREATE TABLE document (
-    docket_id TEXT PRIMARY KEY,
-    title TEXT,
-    cfr_part TEXT,
-    agency_id TEXT,
-    document_type TEXT,
-    authors TEXT,
-    comment_start_date DATE,
-    comment_end_date DATE,
-    posted_date TIMESTAMP,
-    modified_date TIMESTAMP
-);
-
--- =========================
--- Insert sample row
--- =========================
-INSERT INTO document (
+INSERT INTO documents (
+    document_id,
     docket_id,
-    title,
-    cfr_part,
+    document_api_link,
     agency_id,
     document_type,
-    authors,
-    comment_start_date,
-    comment_end_date,
+    modify_date,
     posted_date,
-    modified_date
+    document_title,
+    comment_start_date,
+    comment_end_date
 )
 VALUES (
+    'CMS-2025-0242-0001',
     'CMS-2025-0242',
-    'ESRD Treatment Choices Model Updates',
-    '42 CFR Parts 413 and 512',
+    'https://api.regulations.gov/v4/documents/CMS-2025-0242-0001',
     'CMS',
     'Proposed Rule',
-    'CMS Innovation Center',
-    '2025-03-01',
-    '2025-05-01',
-    '2025-02-10 10:15:00',
-    '2025-02-12 11:20:00'
+    '2025-02-12 11:20:00+00',
+    '2025-02-10 10:15:00+00',
+    'ESRD Treatment Choices Model Updates',
+    '2025-03-01 00:00:00+00',
+    '2025-05-01 00:00:00+00'
 );
 
--- Show inserted data
-SELECT * FROM document;
+SELECT * FROM documents;
 
 EOF
 
