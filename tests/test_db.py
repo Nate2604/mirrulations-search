@@ -167,12 +167,11 @@ def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
     }
 
 
-def test_get_db_uses_postgres_when_env_set(monkeypatch):
+def test_get_db_returns_postgres_connection(monkeypatch):
     sentinel = DBLayer(conn="conn")
     monkeypatch.setattr(db_module, "get_postgres_connection", lambda: sentinel)
-    monkeypatch.setenv("USE_POSTGRES", "true")
 
-    db = db_module.get_db()
+    db = get_db()
 
     assert db is sentinel
 
