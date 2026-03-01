@@ -134,7 +134,7 @@ def test_search_with_parentheses(db):
     assert len(db.search("(ESRD)")) >= 1
 
 
-# --- filter_param ---
+# --- filters ---
 
 def test_search_filter_matching_document_type(db):
     result = db.search("renal", "Proposed Rule")
@@ -151,3 +151,26 @@ def test_search_filter_is_case_insensitive(db):
     upper = db.search("renal", "PROPOSED RULE")
     mixed = db.search("renal", "Proposed Rule")
     assert lower == upper == mixed
+
+def test_search_agency_filter(db):
+    """Agency filter works in dummy branch"""
+    result = db.search("", agency="CMS")
+    assert len(result) == 2
+    assert all(item["agency_id"] == "CMS" for item in result)
+
+
+def test_search_agency_filter_no_match(db):
+    """Agency filter returns empty when no match"""
+    result = db.search("", agency="FDA")
+    assert result == []
+
+
+def test_search_cfr_part_filter(db):
+    """cfr_part_param filter works in dummy branch"""
+    result = db.search("", cfr_part_param="42")
+    assert len(result) == 2
+
+def test_search_cfr_part_filter_no_match(db):
+    """cfr_part_param returns empty when no match"""
+    result = db.search("", cfr_part_param="999")
+    assert result == []

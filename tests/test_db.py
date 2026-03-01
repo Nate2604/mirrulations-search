@@ -131,6 +131,18 @@ def test_search_postgres_branch_filter_and_agency():
     assert params == ["%renal%", "%renal%", "Proposed Rule", "%CMS%"]
 
 
+def test_search_postgres_branch_cfr_part():
+    """cfr_part_param adds correct clause and param"""
+    rows = [("D1", "Title One", "42", "CMS", "Proposed Rule")]
+    db = DBLayer(conn=_FakeConn(rows))
+
+    db.search("", cfr_part_param="42")
+
+    sql, params = db.conn.cursor_obj.executed
+    assert "c.cfrpart ILIKE %s" in sql
+    assert "%42%" in params
+
+
 # --- Factory function tests ---
 
 def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
@@ -165,6 +177,49 @@ def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
         "user": "dbuser",
         "password": "dbpass",
     }
+
+
+def test_get_postgres_connection_uses_aws_secrets(monkeypatch):
+    """USE_AWS_SECRETS=true uses boto3 to get credentials"""
+    fake_creds = {
+        "host": "aws-host",
+        "port": "5432",
+        "db": "aws-db",
+        "username": "aws-user",
+        "password": "aws-pass",
+    }
+
+    class FakeClient:  # pylint: disable=too-few-public-methods
+        def get_secret_value(self, **_kwargs):  # pylint: disable=unused-argument
+            return {"SecretString": __import__("json").dumps(fake_creds)}
+
+        def describe_secret(self, **_kwargs):  # pylint: disable=unused-argument
+            return {}
+
+    fake_boto3 = type("boto3", (), {"client": staticmethod(lambda *a, **kw: FakeClient())})()
+    captured = {}
+
+    def fake_connect(**kwargs):
+        captured.update(kwargs)
+        return "aws-conn"
+
+    monkeypatch.setattr(db_module, "boto3", fake_boto3)
+    monkeypatch.setattr(db_module.psycopg2, "connect", fake_connect)
+    monkeypatch.setenv("USE_AWS_SECRETS", "true")
+
+    db = db_module.get_postgres_connection()
+
+    assert isinstance(db, DBLayer)
+    assert db.conn == "aws-conn"
+    assert captured["host"] == "aws-host"
+    assert captured["database"] == "aws-db"
+
+
+def test_get_secrets_from_aws_raises_without_boto3(monkeypatch):
+    """_get_secrets_from_aws raises ImportError when boto3 is None"""
+    monkeypatch.setattr(db_module, "boto3", None)
+    with pytest.raises(ImportError):
+        db_module._get_secrets_from_aws()
 
 
 def test_get_db_uses_postgres_when_env_set(monkeypatch):

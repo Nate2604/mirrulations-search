@@ -1,7 +1,8 @@
-from typing import List, Dict, Any, Optional
+import re
+from typing import List, Dict, Any
 
 
-class MockDBLayer:
+class MockDBLayer:  # pylint: disable=too-few-public-methods
     """
     Mock DB layer that returns hardcoded dummy data for testing.
     Mirrors the interface of DBLayer without any DB connection.
@@ -35,16 +36,24 @@ class MockDBLayer:
             },
         ]
 
-    def search(self,
+    def get_all(self) -> List[Dict[str, Any]]:
+        """Return all dummy records without filtering."""
+        return self._items()
+
+    def search(
+            self,
             query: str,
-            document_type_param: Optional[str] = None,
-            agency: Optional[str]  = None,
-            cfr_part_param: Optional[str] = None) \
+            document_type_param: str = None,
+            agency: str = None,
+            cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
-        q = (query or "").strip().lower()
+        q = re.sub(r'[^\w\s-]', '', (query or "")).strip().lower()
         results = [
             item for item in self._items()
-            if q in item["title"].lower() or q in item["docket_id"].lower()
+            if not q
+            or q in item["docket_id"].lower()
+            or q in item["title"].lower()
+            or q in item["agency_id"].lower()
         ]
         if document_type_param:
             results = [
@@ -54,16 +63,11 @@ class MockDBLayer:
         if agency:
             results = [
                 item for item in results
-                if item["agency_id"].lower() == agency.lower()
+                if agency.lower() in item["agency_id"].lower()
             ]
         if cfr_part_param:
             results = [
                 item for item in results
-                if item["cfrPart"].lower() == cfr_part_param.lower()
+                if cfr_part_param.lower() in item["cfrPart"].lower()
             ]
         return results
-
-
-    def get_all(self) -> List[Dict[str, Any]]:
-        """Return all dummy records without filtering."""
-        return self._items()
