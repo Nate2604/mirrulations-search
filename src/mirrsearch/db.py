@@ -79,21 +79,22 @@ def get_postgres_connection() -> DBLayer:
 
 
 def get_db() -> DBLayer:
-    """
-    Return the default DB layer for the app.
-    """
     if LOAD_DOTENV is not None:
         LOAD_DOTENV()
-    use_postgres = os.getenv("USE_POSTGRES", "").lower() in {"1", "true", "yes", "on"}
-    if use_postgres:
+    try:
         return get_postgres_connection()
-    return DBLayer()
+    except psycopg2.OperationalError:
+        return DBLayer()
 
 
 def get_opensearch_connection() -> OpenSearch:
-    client = OpenSearch(
-        hosts=[{"host": "localhost", "port": 9200}],
+    if LOAD_DOTENV is not None:
+        LOAD_DOTENV()
+    return OpenSearch(
+        hosts=[{
+            "host": os.getenv("OPENSEARCH_HOST", "localhost"),
+            "port": int(os.getenv("OPENSEARCH_PORT", "9200")),
+        }],
         use_ssl=False,
         verify_certs=False,
     )
-    return client
