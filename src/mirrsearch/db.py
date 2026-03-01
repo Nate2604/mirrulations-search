@@ -34,7 +34,7 @@ class DBLayer:
             return []
         return self._search_postgres(query, document_type_param, agency, cfr_part_param)
 
-    def _search_postgres(
+    def _search_postgres(  # pylint: disable=unused-argument
             self,
             query: str,
             document_type_param: str = None,
