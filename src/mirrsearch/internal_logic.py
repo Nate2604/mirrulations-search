@@ -17,7 +17,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
                 "cfrPart": "Test CFR Part",
                 "agency_id": "Test Agency ID",
                 "docket_type": "Test Docket Type",
-                "modified_date": "2026-03-01"
+                "modify_date": "2026-03-01"
 
             }
         ]
