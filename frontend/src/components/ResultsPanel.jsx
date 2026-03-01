@@ -5,15 +5,7 @@ export default function ResultsPanel({ results }) {
   if (!results || results.length === 0) {
     return (
       <div className="results">
-        <ColorRing
-visible={true}
-height="80"
-width="80"
-ariaLabel="color-ring-loading"
-wrapperStyle={{}}
-wrapperClass="color-ring-wrapper"
-colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
-/>
+        <p>No results found.</p>
       </div>
     );
   }
@@ -27,9 +19,10 @@ colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
 
           <div className="result-meta">
             <p><strong>Agency:</strong> {item.agency_id}</p>
-            <p><strong>Document Type:</strong> {item.document_type}</p>
+            <p><strong>Docket-ID:</strong> {item.docket_id}</p>
+            <p><strong>Docket type:</strong> {item.docket_type}</p>
             <a href={CFR_BASE_URL}><p><strong>CFR:</strong> {item.cfrPart}</p></a>
-            <p><strong>Publication Date:</strong> {item.publication_date}</p>
+            <p><strong>Last modified date:</strong> {item.modify_date}</p>
           </div>
 
           {item.summary && (

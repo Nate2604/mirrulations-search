@@ -1,4 +1,4 @@
-import { useMemo, useState,useEffect } from "react";
+import { useMemo, useState } from "react";
 import "./styles/app.css";
 import { searchDockets } from "./api/searchApi";
 import AdvancedSidebar from "./components/AdvancedSidebar";
@@ -58,11 +58,6 @@ const clearAdvanced = () => {
     setSelectedAgencies(new Set());
     setStatus(new Set());
   };
-
-useEffect(()=> {
-  runSearch()
-},[])
-
 
 return (
 <div className="page">
