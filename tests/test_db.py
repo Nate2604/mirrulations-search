@@ -350,9 +350,8 @@ def test_get_secrets_from_aws_raises_without_boto3(monkeypatch):
 def test_get_db_uses_postgres_when_env_set(monkeypatch):
     sentinel = DBLayer(conn="conn")
     monkeypatch.setattr(db_module, "get_postgres_connection", lambda: sentinel)
-    monkeypatch.setenv("USE_POSTGRES", "true")
 
-    db = db_module.get_db()
+    db = get_db()
 
     assert db is sentinel
 
