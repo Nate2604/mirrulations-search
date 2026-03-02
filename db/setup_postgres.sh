@@ -4,17 +4,20 @@ DB_NAME="mirrulations"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Starting PostgreSQL..."
-PG_VERSION="17"  # use your actual version
+PG_VERSION="${PG_VERSION:-$(brew list | grep -oE 'postgresql@[0-9]+' | sort -t@ -k2 -n | tail -1 | cut -d@ -f2)}"
+if [ -z "$PG_VERSION" ]; then
+    echo "Error: No PostgreSQL installation found via Homebrew."
+    exit 1
+fi
 export PATH="/opt/homebrew/opt/postgresql@${PG_VERSION}/bin:$PATH"
-brew services start postgresql@${PG_VERSION}
+pg_isready -q 2>/dev/null || brew services start postgresql@${PG_VERSION}
 
 #TODO: Change so database doesn't get dropped when prod ready.
-# `run_pg` is a function that runs a command as the proper user on Linux, and as the current user on Mac.
 echo "Dropping database if it exists..."
-run_pg dropdb --if-exists $DB_NAME
+dropdb --if-exists $DB_NAME
 
 echo "Creating database..."
-run_pg createdb $DB_NAME
+createdb $DB_NAME
 
 echo "Creating schema..."
 psql -d $DB_NAME -f "$SCRIPT_DIR/schema-postgres.sql"

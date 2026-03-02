@@ -244,6 +244,7 @@ INSERT INTO documents (
     NULL,
     NULL,
     NULL,
+    NULL,
     '2025-09-19T09:01:18Z',
     FALSE,
     NULL,
@@ -282,7 +283,6 @@ INSERT INTO documents (
         'Intergovernmental Relations'
         ],
     FALSE,
-    NULL,
     NULL
 );
 
