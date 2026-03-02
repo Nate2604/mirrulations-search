@@ -7,7 +7,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
 
     def __init__(self, database, db_layer=None):
         self.database = database
-        self.db_layer = db_layer
+        self.db_layer = db_layer if db_layer is not None else get_db()
 
     def search(self, query, document_type_param=None, agency=None,
                cfr_part_param=None, page=1, page_size=10):
@@ -26,7 +26,6 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         Returns:
             dict: Paginated response with metadata
         """
-        # Get all search results from database
         all_results = self.db_layer.search(
             query,
             document_type_param,
@@ -34,18 +33,14 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
             cfr_part_param
         )
 
-        # Calculate pagination
         total_results = len(all_results)
         total_pages = (total_results + page_size - 1) // page_size
 
-        # Calculate start and end indices
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
 
-        # Get the page of results
         page_results = all_results[start_idx:end_idx]
 
-        # Build paginated response
         return {
             "results": page_results,
             "pagination": {
