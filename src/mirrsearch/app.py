@@ -8,7 +8,7 @@ def _get_search_params():
     """Extract and validate search parameters from the request."""
     return {
         'search_input': request.args.get('str') or 'example_query',
-        'document_type': request.args.get('document_type'),
+        'docket_type': request.args.get('docket_type'),
         'agency': request.args.get('agency'),
         'cfr_part': request.args.get('cfr_part'),
     }
@@ -57,7 +57,7 @@ def create_app(dist_dir=None, db_layer=None):
         logic = InternalLogic("sample_database", db_layer=db_layer)
         result = logic.search(
             params['search_input'],
-            params['document_type'],
+            params['docket_type'],
             params['agency'],
             params['cfr_part'],
             page=page,

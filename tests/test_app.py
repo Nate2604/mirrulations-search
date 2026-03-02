@@ -90,9 +90,9 @@ def test_search_without_filter_returns_all_matches(client):  # pylint: disable=r
     assert len(data) > 0
 
 
-def test_search_with_valid_filter_returns_matching_document_type(client):  # pylint: disable=redefined-outer-name
-    """Filter param restricts results to the specified document_type"""
-    response = client.get('/search/?str=renal&document_type=Proposed Rule')
+def test_search_with_valid_filter_returns_matching_docket_type(client):  # pylint: disable=redefined-outer-name
+    """Filter param restricts results to the specified docket_type"""
+    response = client.get('/search/?str=renal&docket_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -101,9 +101,9 @@ def test_search_with_valid_filter_returns_matching_document_type(client):  # pyl
         assert doc['document_type'] == 'Proposed Rule'
 
 
-def test_search_with_filter_only_affects_document_type(client):  # pylint: disable=redefined-outer-name
-    """Filter only restricts document_type; other fields are unaffected"""
-    response = client.get('/search/?str=ESRD&document_type=Proposed Rule')
+def test_search_with_filter_only_affects_docket_type(client):  # pylint: disable=redefined-outer-name
+    """Filter only restricts docket_type; other fields are unaffected"""
+    response = client.get('/search/?str=ESRD&docket_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -114,8 +114,8 @@ def test_search_with_filter_only_affects_document_type(client):  # pylint: disab
 
 
 def test_search_with_nonexistent_filter_returns_empty_list(client):  # pylint: disable=redefined-outer-name
-    """A filter value matching no document_type returns an empty list"""
-    response = client.get('/search/?str=renal&document_type=Final Rule')
+    """A filter value matching no docket_type returns an empty list"""
+    response = client.get('/search/?str=renal&docket_type=Final Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -124,7 +124,7 @@ def test_search_with_nonexistent_filter_returns_empty_list(client):  # pylint: d
 
 def test_search_filter_without_query_string_uses_default(client):  # pylint: disable=redefined-outer-name
     """If str is missing, defaults to 'example_query' which matches nothing"""
-    response = client.get('/search/?document_type=Proposed Rule')
+    response = client.get('/search/?docket_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -133,7 +133,7 @@ def test_search_filter_without_query_string_uses_default(client):  # pylint: dis
 
 def test_search_filter_result_structure(client):  # pylint: disable=redefined-outer-name
     """Filtered results have all required fields"""
-    response = client.get('/search/?str=CMS&document_type=Proposed Rule')
+    response = client.get('/search/?str=CMS&docket_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -166,7 +166,7 @@ def test_search_with_nonexistent_agency_returns_empty_list(client):  # pylint: d
 
 def test_search_with_agency_and_filter(client):  # pylint: disable=redefined-outer-name
     """Both agency and filter params can be combined"""
-    response = client.get('/search/?str=renal&agency=CMS&document_type=Proposed Rule')
+    response = client.get('/search/?str=renal&agency=CMS&docket_type=Proposed Rule')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)

@@ -9,7 +9,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         self.database = database
         self.db_layer = db_layer if db_layer is not None else get_db()
 
-    def search(self, query, document_type_param=None, agency=None,
+    def search(self, query, docket_type_param=None, agency=None,
                cfr_part_param=None, page=1, page_size=10):
         # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
         """
@@ -17,7 +17,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
 
         Args:
             query: Search query string
-            document_type_param: Filter by document type
+            docket_type_param: Filter by docket type
             agency: Filter by agency
             cfr_part_param: Filter by CFR part
             page: Page number (1-indexed)
@@ -28,7 +28,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         """
         all_results = self.db_layer.search(
             query,
-            document_type_param,
+            docket_type_param,
             agency,
             cfr_part_param
         )
