@@ -40,6 +40,14 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         end_idx = start_idx + page_size
 
         page_results = all_results[start_idx:end_idx]
+        for result in page_results:
+            cfr_refs = result.pop("cfr_refs", None)
+            if cfr_refs is not None:
+                result["cfrPart"] = [
+                    {"part": part, "link": ref.get("link")}
+                    for ref in cfr_refs
+                    for part in ref.get("cfrParts", [])
+                ]
 
         return {
             "results": page_results,
