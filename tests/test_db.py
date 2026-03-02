@@ -152,7 +152,8 @@ def test_search_dockets_postgres_empty_results():
 
 def test_search_dockets_postgres_single_docket_single_cfr():
     """Single row returns one docket with one cfr_ref"""
-    rows = [("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://link")]
+    rows = [("DOC-001", "Test Docket", "CMS", "Rulemaking",
+             "2024-01-01", "Title 42", "42", "http://link")]
     db = DBLayer(conn=_FakeConn(rows))
 
     results = db._search_dockets_postgres("test")
@@ -172,8 +173,10 @@ def test_search_dockets_postgres_single_docket_single_cfr():
 def test_search_dockets_postgres_multiple_cfr_parts_same_title():
     """Multiple rows for same docket+title aggregate cfrParts without duplicates"""
     rows = [
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://link"),
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "43", "http://link"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "42", "http://link"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "43", "http://link"),
     ]
     db = DBLayer(conn=_FakeConn(rows))
 
@@ -190,8 +193,10 @@ def test_search_dockets_postgres_multiple_cfr_parts_same_title():
 def test_search_dockets_postgres_multiple_titles_same_docket():
     """Multiple cfr titles for the same docket produce multiple cfr_refs"""
     rows = [
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://link42"),
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 45", "45", "http://link45"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "42", "http://link42"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 45", "45", "http://link45"),
     ]
     db = DBLayer(conn=_FakeConn(rows))
 
@@ -205,8 +210,10 @@ def test_search_dockets_postgres_multiple_titles_same_docket():
 def test_search_dockets_postgres_multiple_dockets():
     """Rows for different dockets produce separate docket entries"""
     rows = [
-        ("DOC-001", "First Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://a"),
-        ("DOC-002", "Second Docket", "EPA", "Rulemaking", "2024-02-01", "Title 40", "40", "http://b"),
+        ("DOC-001", "First Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "42", "http://a"),
+        ("DOC-002", "Second Docket", "EPA", "Rulemaking",
+         "2024-02-01", "Title 40", "40", "http://b"),
     ]
     db = DBLayer(conn=_FakeConn(rows))
 
@@ -233,8 +240,10 @@ def test_search_dockets_postgres_none_cfr_fields_ignored():
 def test_search_dockets_postgres_duplicate_cfr_part_not_repeated():
     """Same cfrPart appearing in multiple rows is only stored once"""
     rows = [
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://link"),
-        ("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", "Title 42", "42", "http://link"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "42", "http://link"),
+        ("DOC-001", "Test Docket", "CMS", "Rulemaking",
+         "2024-01-01", "Title 42", "42", "http://link"),
     ]
     db = DBLayer(conn=_FakeConn(rows))
 
