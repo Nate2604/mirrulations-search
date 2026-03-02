@@ -282,6 +282,7 @@ INSERT INTO documents (
         'Intergovernmental Relations'
         ],
     FALSE,
+    NULL,
     NULL
 );
 
@@ -534,6 +535,8 @@ INSERT INTO documents (
     NULL,
     'CMS',
     FALSE,
+    NULL,
+    NULL,
     NULL,
     NULL,
     NULL,
