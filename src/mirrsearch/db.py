@@ -1,8 +1,15 @@
+# pylint: disable=duplicate-code
+import json
 from dataclasses import dataclass
 from typing import List, Dict, Any
 import os
 import psycopg2
 from opensearchpy import OpenSearch
+
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 
 try:
     from dotenv import load_dotenv
@@ -14,25 +21,30 @@ else:
 
 @dataclass(frozen=True)
 class DBLayer:
-    """
-    DB layer for connecting to PostgreSQL and returning data.
-    """
     conn: Any = None
 
     def search(
             self,
             query: str,
             document_type_param: str = None,
-            agency:str = None,
+            agency: str = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
+        return self._search_postgres(query, document_type_param, agency, cfr_part_param)
 
+    def _search_postgres(  # pylint: disable=unused-argument
+            self,
+            query: str,
+            document_type_param: str = None,
+            agency: str = None,
+            cfr_part_param: str = None) \
+            -> List[Dict[str, Any]]:
         sql = """
-            SELECT d.docket_id, d.document_title, c.cfrpart, d.agency_id, d.document_type
+            SELECT d.docket_id, d.document_title, NULL AS cfrpart, d.agency_id, d.document_type
             FROM documents d
-            LEFT JOIN cfrparts c ON d.document_id = c.document_id
+            -- LEFT JOIN cfrparts c ON d.document_id = c.document_id
             WHERE (d.docket_id ILIKE %s OR d.document_title ILIKE %s)
         """
         params = ([f"%{(query or '').strip().lower()}%"] * 2
@@ -43,13 +55,16 @@ class DBLayer:
             sql += " AND d.document_type = %s"
             params.append(document_type_param)
 
-        if cfr_part_param:
-            sql += " AND c.cfrpart = %s"
-            params.append(cfr_part_param)
+        # cfr_part_param filter commented out until cfrparts table is available in RDS
+        # if cfr_part_param:
+        #     sql += " AND c.cfrpart ILIKE %s"
+        #     params.append(f"%{cfr_part_param}%")
 
         if agency:
             sql += " AND d.agency_id ILIKE %s"
             params.append(f"%{agency}%")
+
+        sql += " LIMIT 50"
 
         with self.conn.cursor() as cur:
             cur.execute(sql, params)
@@ -65,16 +80,98 @@ class DBLayer:
             ]
 
 
-def get_postgres_connection() -> DBLayer:
-    if LOAD_DOTENV is not None:
-        LOAD_DOTENV()
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=os.getenv("DB_PORT", "5432"),
-        database=os.getenv("DB_NAME", "your_db"),
-        user=os.getenv("DB_USER", "your_user"),
-        password=os.getenv("DB_PASSWORD", "your_password")
+    def _search_dockets_postgres(self, query: str) -> List[Dict[str, Any]]:
+        sql = """
+            SELECT DISTINCT
+                d.docket_id,
+                d.docket_title,
+                d.agency_id,
+                d.docket_type,
+                d.modify_date,
+                cp.title,
+                cp.cfrPart,
+                l.link
+            FROM dockets d
+            JOIN documents doc ON doc.docket_id = d.docket_id
+            JOIN cfrparts cp ON cp.document_id = doc.document_id
+            LEFT JOIN links l ON l.title = cp.title AND l.cfrPart = cp.cfrPart
+            WHERE d.docket_title ILIKE %s
+            ORDER BY d.docket_id, cp.title, cp.cfrPart
+            LIMIT 50
+        """
+        params = [f"%{(query or '').strip().lower()}%"]
+
+        with self.conn.cursor() as cur:
+            cur.execute(sql, params)
+            dockets = {}
+            for row in cur.fetchall():
+                self._process_docket_row(dockets, row)
+            return [
+                {**d, "cfr_refs": list(d["cfr_refs"].values())}
+                for d in dockets.values()
+            ]
+
+    @staticmethod
+    def _process_docket_row(dockets, row):
+        docket_id = row[0]
+        if docket_id not in dockets:
+            dockets[docket_id] = {
+                "docket_id": row[0],
+                "docket_title": row[1],
+                "agency_id": row[2],
+                "docket_type": row[3],
+                "modify_date": row[4],
+                "cfr_refs": {}
+            }
+        title, cfr_part, link = row[5], row[6], row[7]
+        if title is not None and cfr_part is not None:
+            if title not in dockets[docket_id]["cfr_refs"]:
+                dockets[docket_id]["cfr_refs"][title] = {
+                    "title": title,
+                    "cfrParts": [],
+                    "link": link
+                }
+            if cfr_part not in dockets[docket_id]["cfr_refs"][title]["cfrParts"]:
+                dockets[docket_id]["cfr_refs"][title]["cfrParts"].append(cfr_part)
+
+
+def _get_secrets_from_aws() -> Dict[str, str]:
+    if boto3 is None:
+        raise ImportError("boto3 is required to use AWS Secrets Manager.")
+
+    client = boto3.client(
+        "secretsmanager",
+        region_name="YOUR_REGION"
     )
+    response = client.get_secret_value(
+        SecretId="YOUR_SECRET_NAME"
+    )
+    return json.loads(response["SecretString"])
+
+
+def get_postgres_connection() -> DBLayer:
+    use_aws_secrets = os.getenv("USE_AWS_SECRETS", "").lower() in {"1", "true", "yes", "on"}
+
+    if use_aws_secrets:
+        creds = _get_secrets_from_aws()
+        conn = psycopg2.connect(
+            host=creds["host"],
+            port=creds["port"],
+            database=creds["db"],
+            user=creds["username"],
+            password=creds["password"]
+        )
+    else:
+        if LOAD_DOTENV is not None:
+            LOAD_DOTENV()
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            port=os.getenv("DB_PORT", "5432"),
+            database=os.getenv("DB_NAME", "your_db"),
+            user=os.getenv("DB_USER", "your_user"),
+            password=os.getenv("DB_PASSWORD", "your_password")
+        )
+
     return DBLayer(conn)
 
 

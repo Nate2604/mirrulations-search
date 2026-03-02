@@ -1,11 +1,54 @@
+"""Internal logic module for search operations with pagination"""
 from mirrsearch.db import get_db
 
 
 class InternalLogic:  # pylint: disable=too-few-public-methods
+    """Internal logic for search operations with pagination"""
+
     def __init__(self, database, db_layer=None):
         self.database = database
         self.db_layer = db_layer if db_layer is not None else get_db()
 
-    def search(self, query, document_type_param=None, agency=None, cfr_part_param=None):
-        search_results = self.db_layer.search(query, document_type_param, agency, cfr_part_param)
-        return search_results
+    def search(self, query, document_type_param=None, agency=None,
+               cfr_part_param=None, page=1, page_size=10):
+        # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+        """
+        Search with pagination support.
+
+        Args:
+            query: Search query string
+            document_type_param: Filter by document type
+            agency: Filter by agency
+            cfr_part_param: Filter by CFR part
+            page: Page number (1-indexed)
+            page_size: Number of results per page
+
+        Returns:
+            dict: Paginated response with metadata
+        """
+        all_results = self.db_layer.search(
+            query,
+            document_type_param,
+            agency,
+            cfr_part_param
+        )
+
+        total_results = len(all_results)
+        total_pages = (total_results + page_size - 1) // page_size
+
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+
+        page_results = all_results[start_idx:end_idx]
+
+        return {
+            "results": page_results,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_results": total_results,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            }
+        }
