@@ -572,6 +572,94 @@ INSERT INTO documents (
     NULL
 );
 
+INSERT INTO documents(
+    document_id,
+    docket_id,
+    document_api_link,
+    address1,
+    address2,
+    agency_id,
+    is_late_comment,
+    author_date,
+    comment_category,
+    city,
+    comment,
+    comment_end_date,
+    comment_start_date,
+    country,
+    document_type,
+    effective_date,
+    email,
+    fax,
+    flex_field1,
+    flex_field2,
+    first_name,
+    submitter_gov_agency,
+    submitter_gov_agency_type,
+    implementation_date,
+    last_name,
+    modify_date,
+    is_open_for_comment,
+    submitter_org,
+    phone,
+    posted_date,
+    postmark_date,
+    reason_withdrawn,
+    receive_date,
+    reg_writer_instruction,
+    restriction_reason,
+    restriction_reason_type,
+    state_province_region,
+    subtype,
+    document_title,
+    topics,
+    is_withdrawn,
+    postal_code
+) VALUES (
+    'CMS-2025-0240-0001',
+    'CMS-2025-0240',
+    "https://api.regulations.gov/v4/documents/CMS-2025-0240-0001",
+    NULL,
+    NULL,
+    'CMS',
+    FALSE,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2025-07-03T03:59:59Z',
+    '2025-06-30T04:00:00Z',
+    NULL,
+    'Proposed Rule',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2025-07-02T16:46:00Z',
+    FALSE,
+    NULL,
+    NULL,
+    '2025-06-30T04:00:00Z',
+    NULL,
+    NULL,
+    '2025-06-30T04:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    'CY 2026 Changes to the End-Stage Renal Disease (ESRD) Prospective Payment System and Quality Incentive Program. CMS1830-P Display',
+    NULL,
+    FALSE,
+    NULL
+);
+
 -- =========================================
 -- LINKS
 -- =========================================
@@ -594,6 +682,16 @@ INSERT INTO links(
     42,
     410,
     'https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-410?toc=1'
+);
+
+INSERT INTO links(
+    title,
+    cfrPart,
+    link
+) VALUES (
+    42,
+    413,
+    'https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-413?toc=1'
 );
 
 INSERT INTO links(
@@ -1088,4 +1186,28 @@ INSERT INTO cfrParts(
     '2025-15492',
     42,
     '425'
+);
+
+INSERT INTO cfrParts(
+    document_id,
+    frDocNum,
+    title,
+    cfrPart
+) VALUES (
+    'CMS-2025-0240-0001',
+    '2025-20681',
+    42,
+    '413'
+);
+
+INSERT INTO cfrParts(
+    document_id,
+    frDocNum,
+    title,
+    cfrPart
+) VALUES (
+    'CMS-2025-0240-0001',
+    '2025-20681',
+    42,
+    '512'
 );

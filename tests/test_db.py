@@ -78,7 +78,7 @@ def test_search_postgres_branch_without_filter():
     rows = [("D1", "Title One", "CFR 1", "AG", "Rule")]
     db = DBLayer(conn=_FakeConn(rows))
 
-    results = db.search("abc")
+    results = db._search_postgres("abc")
 
     assert results == [
         {
@@ -99,7 +99,7 @@ def test_search_postgres_branch_with_filter():
     rows = [("D2", "Title Two", "CFR 2", "AG2", "Proposed Rule")]
     db = DBLayer(conn=_FakeConn(rows))
 
-    db.search("", "Proposed Rule")
+    db._search_postgres("", "Proposed Rule")
 
     sql, params = db.conn.cursor_obj.executed
     assert "document_type = %s" in sql
@@ -111,7 +111,7 @@ def test_search_postgres_branch_agency_only():
     rows = [("D1", "Title One", "CFR 1", "CMS", "Rule")]
     db = DBLayer(conn=_FakeConn(rows))
 
-    db.search("", agency="CMS")
+    db._search_postgres("", agency="CMS")
 
     sql, params = db.conn.cursor_obj.executed
     assert "agency_id ILIKE %s" in sql
@@ -123,7 +123,7 @@ def test_search_postgres_branch_filter_and_agency():
     rows = [("D1", "Title One", "CFR 1", "CMS", "Proposed Rule")]
     db = DBLayer(conn=_FakeConn(rows))
 
-    db.search("renal", "Proposed Rule", "CMS")
+    db._search_postgres("renal", "Proposed Rule", "CMS")
 
     sql, params = db.conn.cursor_obj.executed
     assert "document_type = %s" in sql
@@ -135,7 +135,7 @@ def test_search_postgres_branch_cfr_part():
     """cfr_part_param is accepted but currently commented out pending cfrparts table in RDS"""
     rows = [("D1", "Title One", "42", "CMS", "Proposed Rule")]
     db = DBLayer(conn=_FakeConn(rows))
-    db.search("", cfr_part_param="42")
+    db._search_postgres("", cfr_part_param="42")
     sql, params = db.conn.cursor_obj.executed
     assert "LIMIT 50" in sql
     assert params == ["%%", "%%"]

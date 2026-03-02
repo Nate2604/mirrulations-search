@@ -23,7 +23,7 @@ else:
 class DBLayer:
     conn: Any = None
 
-    def search(
+    def search(  # pylint: disable=unused-argument
             self,
             query: str,
             document_type_param: str = None,
@@ -32,7 +32,7 @@ class DBLayer:
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
-        return self._search_postgres(query, document_type_param, agency, cfr_part_param)
+        return self._search_dockets_postgres(query)
 
     def _search_postgres(  # pylint: disable=unused-argument
             self,
