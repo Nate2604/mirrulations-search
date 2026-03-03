@@ -128,11 +128,9 @@ class DBLayer:
             if title not in dockets[docket_id]["cfr_refs"]:
                 dockets[docket_id]["cfr_refs"][title] = {
                     "title": title,
-                    "cfrParts": [],
-                    "link": link
+                    "cfrParts": {}
                 }
-            if cfr_part not in dockets[docket_id]["cfr_refs"][title]["cfrParts"]:
-                dockets[docket_id]["cfr_refs"][title]["cfrParts"].append(cfr_part)
+            dockets[docket_id]["cfr_refs"][title]["cfrParts"][cfr_part] = link
 
 
 def _get_secrets_from_aws() -> Dict[str, str]:

@@ -166,8 +166,7 @@ def test_search_dockets_postgres_single_docket_single_cfr():
     assert results[0]["modify_date"] == "2024-01-01"
     assert len(results[0]["cfr_refs"]) == 1
     assert results[0]["cfr_refs"][0]["title"] == "Title 42"
-    assert results[0]["cfr_refs"][0]["cfrParts"] == ["42"]
-    assert results[0]["cfr_refs"][0]["link"] == "http://link"
+    assert results[0]["cfr_refs"][0]["cfrParts"] == {"42": "http://link"}
 
 
 def test_search_dockets_postgres_multiple_cfr_parts_same_title():
@@ -249,7 +248,7 @@ def test_search_dockets_postgres_duplicate_cfr_part_not_repeated():
 
     results = db._search_dockets_postgres("test")
 
-    assert results[0]["cfr_refs"][0]["cfrParts"] == ["42"]
+    assert results[0]["cfr_refs"][0]["cfrParts"] == {"42": "http://link"}
 
 
 def test_search_dockets_postgres_query_param_formatting():
