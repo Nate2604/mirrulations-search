@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 import json
 from dataclasses import dataclass
 from typing import List, Dict, Any
@@ -23,64 +22,21 @@ else:
 class DBLayer:
     conn: Any = None
 
-    def search(  # pylint: disable=unused-argument
+    def search(
             self,
             query: str,
-            document_type_param: str = None,
+            docket_type_param: str = None,
             agency: str = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
-        return self._search_dockets_postgres(query)
+        return self._search_dockets_postgres(query, docket_type_param, agency, cfr_part_param)
 
-    def _search_postgres(  # pylint: disable=unused-argument
-            self,
-            query: str,
-            document_type_param: str = None,
+    def _search_dockets_postgres(  # pylint: disable=too-many-locals
+            self, query: str, docket_type_param: str = None,
             agency: str = None,
-            cfr_part_param: str = None) \
-            -> List[Dict[str, Any]]:
-        sql = """
-            SELECT d.docket_id, d.document_title, NULL AS cfrpart, d.agency_id, d.document_type
-            FROM documents d
-            -- LEFT JOIN cfrparts c ON d.document_id = c.document_id
-            WHERE (d.docket_id ILIKE %s OR d.document_title ILIKE %s)
-        """
-        params = ([f"%{(query or '').strip().lower()}%"] * 2
-                  if (query or "").strip()
-                  else ["%%", "%%"])
-
-        if document_type_param:
-            sql += " AND d.document_type = %s"
-            params.append(document_type_param)
-
-        # cfr_part_param filter commented out until cfrparts table is available in RDS
-        # if cfr_part_param:
-        #     sql += " AND c.cfrpart ILIKE %s"
-        #     params.append(f"%{cfr_part_param}%")
-
-        if agency:
-            sql += " AND d.agency_id ILIKE %s"
-            params.append(f"%{agency}%")
-
-        sql += " LIMIT 50"
-
-        with self.conn.cursor() as cur:
-            cur.execute(sql, params)
-            return [
-                {
-                    "docket_id": row[0],
-                    "title": row[1],
-                    "cfrPart": row[2],
-                    "agency_id": row[3],
-                    "document_type": row[4],
-                }
-                for row in cur.fetchall()
-            ]
-
-
-    def _search_dockets_postgres(self, query: str) -> List[Dict[str, Any]]:
+            cfr_part_param: str = None) -> List[Dict[str, Any]]:
         sql = """
             SELECT DISTINCT
                 d.docket_id,
@@ -96,10 +52,22 @@ class DBLayer:
             LEFT JOIN cfrparts cp ON cp.document_id = doc.document_id
             LEFT JOIN links l ON l.title = cp.title AND l.cfrPart = cp.cfrPart
             WHERE d.docket_title ILIKE %s
-            ORDER BY d.docket_id, cp.title, cp.cfrPart
-            LIMIT 50
         """
         params = [f"%{(query or '').strip().lower()}%"]
+
+        if docket_type_param:
+            sql += " AND d.docket_type = %s"
+            params.append(docket_type_param)
+
+        if agency:
+            sql += " AND d.agency_id ILIKE %s"
+            params.append(f"%{agency}%")
+
+        if cfr_part_param:
+            sql += " AND cp.cfrPart ILIKE %s"
+            params.append(f"%{cfr_part_param}%")
+
+        sql += " ORDER BY d.docket_id, cp.title, cp.cfrPart LIMIT 50"
 
         with self.conn.cursor() as cur:
             cur.execute(sql, params)
