@@ -43,8 +43,8 @@ class MockDBLayer:  # pylint: disable=too-few-public-methods
     def search(
             self,
             query: str,
-            document_type_param: str = None,
-            agency: str = None,
+            document_type_param: List[str] = None,
+            agency: List[str] = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
         q = re.sub(r'[^\w\s-]', '', (query or "")).strip().lower()
@@ -58,12 +58,12 @@ class MockDBLayer:  # pylint: disable=too-few-public-methods
         if document_type_param:
             results = [
                 item for item in results
-                if item["document_type"].lower() == document_type_param.lower()
+                if item["document_type"].lower() in [d.lower() for d in document_type_param]
             ]
         if agency:
             results = [
                 item for item in results
-                if agency.lower() in item["agency_id"].lower()
+                if any(a.lower() in item["agency_id"].lower() for a in agency)
             ]
         if cfr_part_param:
             results = [

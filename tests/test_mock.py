@@ -137,31 +137,47 @@ def test_search_with_parentheses(db):
 # --- filters ---
 
 def test_search_filter_matching_document_type(db):
-    result = db.search("renal", "Proposed Rule")
+    result = db.search("renal", ["Proposed Rule"])
     assert len(result) > 0
     assert all(item["document_type"] == "Proposed Rule" for item in result)
 
 
 def test_search_filter_nonexistent_document_type(db):
-    assert db.search("renal", "Final Rule") == []
+    assert db.search("renal", ["Final Rule"]) == []
 
 
 def test_search_filter_is_case_insensitive(db):
-    lower = db.search("renal", "proposed rule")
-    upper = db.search("renal", "PROPOSED RULE")
-    mixed = db.search("renal", "Proposed Rule")
+    lower = db.search("renal", ["proposed rule"])
+    upper = db.search("renal", ["PROPOSED RULE"])
+    mixed = db.search("renal", ["Proposed Rule"])
     assert lower == upper == mixed
+
+
+def test_search_filter_multiple_document_types(db):
+    result = db.search("renal", ["Proposed Rule", "Final Rule"])
+    assert len(result) > 0
+    for item in result:
+        assert item["document_type"] in ("Proposed Rule", "Final Rule")
+
 
 def test_search_agency_filter(db):
     """Agency filter works in dummy branch"""
-    result = db.search("", agency="CMS")
+    result = db.search("", agency=["CMS"])
     assert len(result) == 2
     assert all(item["agency_id"] == "CMS" for item in result)
 
 
+def test_search_agency_filter_multiple(db):
+    """Multiple agency filters return results matching any"""
+    result = db.search("", agency=["CMS", "EPA"])
+    assert len(result) == 2
+    for item in result:
+        assert item["agency_id"] in ("CMS", "EPA")
+
+
 def test_search_agency_filter_no_match(db):
     """Agency filter returns empty when no match"""
-    result = db.search("", agency="FDA")
+    result = db.search("", agency=["FDA"])
     assert result == []
 
 

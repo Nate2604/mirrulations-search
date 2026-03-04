@@ -77,29 +77,48 @@ class _FakeConn:
 def test_search_dockets_postgres_agency_filter():
     """Agency filter adds ILIKE clause and wraps value with wildcards"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", agency="CMS")
+    db._search_dockets_postgres("", agency=["CMS"])
     sql, params = db.conn.cursor_obj.executed
     assert "agency_id ILIKE %s" in sql
     assert params == ["%%", "%CMS%"]
 
 
-def test_search_dockets_postgres_docket_type_filter():
-    """Docket type filter adds exact match clause"""
+def test_search_dockets_postgres_agency_multi_filter():
+    """Multiple agencies produce OR'd ILIKE clauses"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", docket_type_param="Rulemaking")
+    db._search_dockets_postgres("", agency=["CMS", "EPA"])
     sql, params = db.conn.cursor_obj.executed
-    assert "d.docket_type = %s" in sql
-    assert params == ["%%", "Rulemaking"]
+    assert sql.count("agency_id ILIKE %s") == 2
+    assert "%CMS%" in params
+    assert "%EPA%" in params
+
+
+def test_search_dockets_postgres_docket_type_filter():
+    """Docket type filter adds ANY clause"""
+    db = DBLayer(conn=_FakeConn([]))
+    db._search_dockets_postgres("", docket_type_param=["Rulemaking"])
+    sql, params = db.conn.cursor_obj.executed
+    assert "d.docket_type = ANY(%s)" in sql
+    assert params == ["%%", ["Rulemaking"]]
+
+
+def test_search_dockets_postgres_docket_type_multi_filter():
+    """Multiple docket types are passed as a list to ANY"""
+    db = DBLayer(conn=_FakeConn([]))
+    db._search_dockets_postgres("", docket_type_param=["Rulemaking", "Proposed Rule"])
+    sql, params = db.conn.cursor_obj.executed
+    assert "d.docket_type = ANY(%s)" in sql
+    assert params == ["%%", ["Rulemaking", "Proposed Rule"]]
 
 
 def test_search_dockets_postgres_agency_and_docket_type_filter():
     """Both filters add their clauses and params in order"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("renal", docket_type_param="Rulemaking", agency="CMS")
+    db._search_dockets_postgres("renal", docket_type_param=["Rulemaking"], agency=["CMS"])
     sql, params = db.conn.cursor_obj.executed
-    assert "d.docket_type = %s" in sql
+    assert "d.docket_type = ANY(%s)" in sql
     assert "agency_id ILIKE %s" in sql
-    assert params == ["%renal%", "Rulemaking", "%CMS%"]
+    assert params == ["%renal%", ["Rulemaking"], "%CMS%"]
 
 
 def test_search_dockets_postgres_cfr_part_filter():
