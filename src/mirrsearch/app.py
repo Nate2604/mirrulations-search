@@ -8,8 +8,8 @@ def _get_search_params():
     """Extract and validate search parameters from the request."""
     return {
         'search_input': request.args.get('str') or 'example_query',
-        'docket_type': request.args.get('docket_type'),
-        'agency': request.args.get('agency'),
+        'docket_type': [v for v in request.args.getlist('docket_type') if v] or None,
+        'agency': [v for v in request.args.getlist('agency') if v] or None,
         'cfr_part': request.args.get('cfr_part'),
     }
 

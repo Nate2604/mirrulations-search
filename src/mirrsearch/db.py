@@ -25,8 +25,8 @@ class DBLayer:
     def search(
             self,
             query: str,
-            docket_type_param: str = None,
-            agency: str = None,
+            docket_type_param: List[str] = None,
+            agency: List[str] = None,
             cfr_part_param: str = None) \
             -> List[Dict[str, Any]]:
         if self.conn is None:
@@ -34,8 +34,8 @@ class DBLayer:
         return self._search_dockets_postgres(query, docket_type_param, agency, cfr_part_param)
 
     def _search_dockets_postgres(  # pylint: disable=too-many-locals
-            self, query: str, docket_type_param: str = None,
-            agency: str = None,
+            self, query: str, docket_type_param: List[str] = None,
+            agency: List[str] = None,
             cfr_part_param: str = None) -> List[Dict[str, Any]]:
         sql = """
             SELECT DISTINCT
@@ -56,12 +56,13 @@ class DBLayer:
         params = [f"%{(query or '').strip().lower()}%"]
 
         if docket_type_param:
-            sql += " AND d.docket_type = %s"
+            sql += " AND d.docket_type = ANY(%s)"
             params.append(docket_type_param)
 
         if agency:
-            sql += " AND d.agency_id ILIKE %s"
-            params.append(f"%{agency}%")
+            clauses = " OR ".join("d.agency_id ILIKE %s" for _ in agency)
+            sql += f" AND ({clauses})"
+            params.extend(f"%{a}%" for a in agency)
 
         if cfr_part_param:
             sql += " AND cp.cfrPart ILIKE %s"
