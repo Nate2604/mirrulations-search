@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState,useEffect } from "react";
 import "./styles/app.css";
 import { searchDockets } from "./api/searchApi";
 import AdvancedSidebar from "./components/AdvancedSidebar";
 import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
 import { motion } from "motion/react"
+import { ArrowLeftIcon,ArrowRightIcon } from "@phosphor-icons/react";
 
 
 export default function App() {
@@ -65,6 +66,11 @@ const clearAdvanced = () => {
     setSelectedCfrParts(new Set());
   };
 
+
+  useEffect(()=> {
+    console.log(results)
+  },[results])
+
 return (
 <div className="page">
 <header className="topbar">
@@ -112,6 +118,10 @@ onSubmit={(e) => {
 advancedPayload={advancedPayload}
 results={results}
 />
+<div className="pagination-div">
+  <button className="page-button"><ArrowLeftIcon color="white" size={32}/></button>
+  <button className="page-button"><ArrowRightIcon color="white" size={32}/></button>
+</div>
 </main>
 </div>
 </div>
