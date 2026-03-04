@@ -1,15 +1,48 @@
-export default function ResultsPanel({ advancedPayload, results }) {
-  return (
-    <>
-      <div className="demoBox">
-        <div className="demoTitle">Advanced filters</div>
-        <pre>{JSON.stringify(advancedPayload, null, 2)}</pre>
-      </div>
+import {ColorRing} from 'react-loader-spinner'
+const CFR_BASE_URL = "https://www.ecfr.gov/search#query";
 
-      <div className="demoBox">
-        <div className="demoTitle">Search results</div>
-        <pre>{JSON.stringify(results, null, 2)}</pre>
+export default function ResultsPanel({ results }) {
+  if (!results || results.length === 0) {
+    return (
+      <div className="results">
+        <p>No results found.</p>
       </div>
-    </>
+    );
+  }
+
+  return (
+    <div className="results">
+      {results.map((item, index) => (
+        <div key={item.docket_id || index} className="result-card">
+          <h3 className="result-title">{item.docket_title}
+          </h3>
+
+          <div className="result-meta">
+            <p><strong>Agency:</strong> {item.agency_id}</p>
+            <p><strong>Docket-ID:</strong> {item.docket_id}</p>
+            <p><strong>Docket type:</strong> {item.docket_type}</p>
+           <p>
+            <strong>CFR:</strong>{" "}
+               {item.cfrPart.map((p, index) => (
+                 <span key={index}>
+             <a href={p.link} target="_blank" rel="noopener noreferrer">
+             {p.part}
+           </a>
+             {index < item.cfrPart.length - 1 && ", "}
+            </span>
+             ))}
+            </p>
+            <p><strong>Last modified date:</strong> {item.modify_date}</p>
+          </div>
+
+          {item.summary && (
+            <p className="result-summary">
+              {item.summary}
+            </p>
+          )}
+
+        </div>
+      ))}
+    </div>
   );
 }

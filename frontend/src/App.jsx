@@ -64,6 +64,7 @@ const clearAdvanced = () => {
     setStatus(new Set());
     setSelectedCfrParts(new Set());
   };
+
 return (
 <div className="page">
 <header className="topbar">
