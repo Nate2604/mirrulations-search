@@ -137,27 +137,20 @@ def test_search_with_parentheses(db):
 # --- filters ---
 
 def test_search_filter_matching_document_type(db):
-    result = db.search("renal", ["Proposed Rule"])
+    result = db.search("renal", "Proposed Rule")
     assert len(result) > 0
     assert all(item["document_type"] == "Proposed Rule" for item in result)
 
 
 def test_search_filter_nonexistent_document_type(db):
-    assert db.search("renal", ["Final Rule"]) == []
+    assert db.search("renal", "Final Rule") == []
 
 
 def test_search_filter_is_case_insensitive(db):
-    lower = db.search("renal", ["proposed rule"])
-    upper = db.search("renal", ["PROPOSED RULE"])
-    mixed = db.search("renal", ["Proposed Rule"])
+    lower = db.search("renal", "proposed rule")
+    upper = db.search("renal", "PROPOSED RULE")
+    mixed = db.search("renal", "Proposed Rule")
     assert lower == upper == mixed
-
-
-def test_search_filter_multiple_document_types(db):
-    result = db.search("renal", ["Proposed Rule", "Final Rule"])
-    assert len(result) > 0
-    for item in result:
-        assert item["document_type"] in ("Proposed Rule", "Final Rule")
 
 
 def test_search_agency_filter(db):
@@ -183,10 +176,17 @@ def test_search_agency_filter_no_match(db):
 
 def test_search_cfr_part_filter(db):
     """cfr_part_param filter works in dummy branch"""
-    result = db.search("", cfr_part_param="42")
+    result = db.search("", cfr_part_param=["42"])
     assert len(result) == 2
+
+
+def test_search_cfr_part_filter_multiple(db):
+    """Multiple cfr_part values return results matching any"""
+    result = db.search("", cfr_part_param=["42", "999"])
+    assert len(result) == 2
+
 
 def test_search_cfr_part_filter_no_match(db):
     """cfr_part_param returns empty when no match"""
-    result = db.search("", cfr_part_param="999")
+    result = db.search("", cfr_part_param=["999"])
     assert result == []

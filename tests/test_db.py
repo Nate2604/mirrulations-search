@@ -94,40 +94,41 @@ def test_search_dockets_postgres_agency_multi_filter():
 
 
 def test_search_dockets_postgres_docket_type_filter():
-    """Docket type filter adds ANY clause"""
+    """Docket type filter adds exact match clause"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", docket_type_param=["Rulemaking"])
+    db._search_dockets_postgres("", docket_type_param="Rulemaking")
     sql, params = db.conn.cursor_obj.executed
-    assert "d.docket_type = ANY(%s)" in sql
-    assert params == ["%%", ["Rulemaking"]]
-
-
-def test_search_dockets_postgres_docket_type_multi_filter():
-    """Multiple docket types are passed as a list to ANY"""
-    db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", docket_type_param=["Rulemaking", "Proposed Rule"])
-    sql, params = db.conn.cursor_obj.executed
-    assert "d.docket_type = ANY(%s)" in sql
-    assert params == ["%%", ["Rulemaking", "Proposed Rule"]]
+    assert "d.docket_type = %s" in sql
+    assert params == ["%%", "Rulemaking"]
 
 
 def test_search_dockets_postgres_agency_and_docket_type_filter():
     """Both filters add their clauses and params in order"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("renal", docket_type_param=["Rulemaking"], agency=["CMS"])
+    db._search_dockets_postgres("renal", docket_type_param="Rulemaking", agency=["CMS"])
     sql, params = db.conn.cursor_obj.executed
-    assert "d.docket_type = ANY(%s)" in sql
+    assert "d.docket_type = %s" in sql
     assert "agency_id ILIKE %s" in sql
-    assert params == ["%renal%", ["Rulemaking"], "%CMS%"]
+    assert params == ["%renal%", "Rulemaking", "%CMS%"]
 
 
 def test_search_dockets_postgres_cfr_part_filter():
     """CFR part filter adds ILIKE clause"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", cfr_part_param="42")
+    db._search_dockets_postgres("", cfr_part_param=["42"])
     sql, params = db.conn.cursor_obj.executed
     assert "cp.cfrPart ILIKE %s" in sql
     assert params == ["%%", "%42%"]
+
+
+def test_search_dockets_postgres_cfr_part_multi_filter():
+    """Multiple CFR parts produce OR'd ILIKE clauses"""
+    db = DBLayer(conn=_FakeConn([]))
+    db._search_dockets_postgres("", cfr_part_param=["42", "45"])
+    sql, params = db.conn.cursor_obj.executed
+    assert sql.count("cp.cfrPart ILIKE %s") == 2
+    assert "%42%" in params
+    assert "%45%" in params
 
 
 def test_search_dockets_postgres_no_filter_no_extra_clauses():
