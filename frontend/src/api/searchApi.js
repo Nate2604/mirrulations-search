@@ -1,7 +1,19 @@
-export async function searchDockets(query, docket_type = '', agency = '', cfr_part = '', page = 1) {
-    // EncodeURIComponent allows for spaces, special chars, etc
+export async function searchDockets(query, docket_type = '', agency = [], cfr_part = [], page = 1) {
+
+	// URLSearchParams make valid params that allow for spaces, special chars, etc
+	const params = new URLSearchParams()
+	params.append("str", query)
+	params.append("page", page)
+
+	agency.forEach(a => params.append("agency", a))
+	cfr_part.forEach(p => params.append("cfr_part", p))
+
+	if (docket_type) {
+		params.append("docket_type", docket_type)
+	}
+
 	const response = await fetch(
-        `/search/?str=${encodeURIComponent(query)}&docket_type=${encodeURIComponent(docket_type)}&agency=${encodeURIComponent(agency)}&cfr_part=${encodeURIComponent(cfr_part)}&page=${page}`
+        `/search/?${params.toString()}`
     )
 
 	if (!response.ok) {
@@ -18,8 +30,6 @@ export async function searchDockets(query, docket_type = '', agency = '', cfr_pa
 		hasNext: response.headers.get("X-Has-Next") === "true",
 		hasPrev: response.headers.get("X-Has-Prev") === "true",
 	  }
-	  console.log("results", results)
-	  console.log("pagination", pagination)
+
 	return { results, pagination }
 }
-

@@ -53,18 +53,14 @@ const activeCount =
     
       try {
         const selectedAgencyList = Array.from(selectedAgencies);
-        const firstAgency =
-          selectedAgencyList[selectedAgencyList.length - 1] || "";
     
         const selectedCfrList = Array.from(selectedCfrParts);
-        const firstCfr =
-          selectedCfrList[selectedCfrList.length - 1] || "";
     
         const data = await searchDockets(
           query,
           docType,
-          firstAgency,
-          firstCfr,
+          selectedAgencyList,
+          selectedCfrList,
           newPage
         );
     

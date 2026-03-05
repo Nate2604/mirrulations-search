@@ -40,7 +40,7 @@ export default function ResultsPanel({ results, loading }) {
             <p><strong>Docket type:</strong> {item.docket_type}</p>
            <p>
             <strong>CFR:</strong>{" "}
-               {item.cfrPart.map((p, index) => (
+               {(item.cfrPart || []).map((p, index) => (
                  <span key={index}>
              <a href={p.link} target="_blank" rel="noopener noreferrer">
              {p.part}
