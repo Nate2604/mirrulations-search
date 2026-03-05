@@ -68,7 +68,7 @@ const activeCount =
           newPage
         );
     
-        setResults(data);
+        setResults(data.results);
         setPagination(data.pagination);
         setPage(newPage);
 
