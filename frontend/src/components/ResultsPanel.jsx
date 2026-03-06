@@ -1,5 +1,5 @@
 import {ColorRing} from 'react-loader-spinner'
-const CFR_BASE_URL = "https://www.ecfr.gov/search#query";
+const ECFR_URL = "https://www.ecfr.gov";
 
 export default function ResultsPanel({ results }) {
   if (!results || results.length === 0) {
@@ -23,14 +23,20 @@ export default function ResultsPanel({ results }) {
             <p><strong>Docket type:</strong> {item.docket_type}</p>
            <p>
             <strong>CFR:</strong>{" "}
-               {item.cfrPart.map((p, index) => (
-                 <span key={index}>
-             <a href={p.link} target="_blank" rel="noopener noreferrer">
-             {p.part}
-           </a>
-             {index < item.cfrPart.length - 1 && ", "}
-            </span>
-             ))}
+            {item.cfrPart && item.cfrPart.length > 0 ? (
+              item.cfrPart.map((p, idx) => (
+                <span key={idx}>
+                  <a href={p.link} target="_blank" rel="noopener noreferrer">
+                    {p.part}
+                  </a>
+                  {idx < item.cfrPart.length - 1 && ", "}
+                </span>
+              ))
+            ) : (
+              <a href={ECFR_URL} target="_blank" rel="noopener noreferrer">
+                None
+              </a>
+            )}
             </p>
             <p><strong>Last modified date:</strong> {item.modify_date}</p>
           </div>
