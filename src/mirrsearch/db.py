@@ -65,9 +65,13 @@ class DBLayer:
             params.extend(f"%{a}%" for a in agency)
 
         if cfr_part_param:
-            clauses = " OR ".join("cp.cfrPart ILIKE %s" for _ in cfr_part_param)
+            clauses = " OR ".join(
+                "(cp.title ILIKE %s AND cp.cfrPart ILIKE %s)" for _ in cfr_part_param
+            )
             sql += f" AND ({clauses})"
-            params.extend(f"%{c}%" for c in cfr_part_param)
+            for c in cfr_part_param:
+                params.append(f"%{c['title']}%")
+                params.append(f"%{c['part']}%")
 
         sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrPart LIMIT 50"
 
