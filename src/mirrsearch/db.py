@@ -66,9 +66,18 @@ class DBLayer:
 
         if cfr_part_param:
             clauses = " OR ".join(
-                "(cp.title ILIKE %s AND cp.cfrPart ILIKE %s)" for _ in cfr_part_param
+                "(cp2.title ILIKE %s AND cp2.cfrPart ILIKE %s)"
+                for _ in cfr_part_param
             )
-            sql += f" AND ({clauses})"
+            sql += f"""
+            AND d.docket_id IN (
+                SELECT d2.docket_id
+                FROM dockets d2
+                JOIN documents doc2 ON doc2.docket_id = d2.docket_id
+                JOIN cfrparts cp2 ON cp2.document_id = doc2.document_id
+                WHERE {clauses}
+            )
+            """
             for c in cfr_part_param:
                 params.append(f"%{c['title']}%")
                 params.append(f"%{c['part']}%")
