@@ -112,23 +112,26 @@ def test_search_dockets_postgres_agency_and_docket_type_filter():
     assert params == ["%renal%", "Rulemaking", "%CMS%"]
 
 
-def test_search_dockets_postgres_cfr_part_filter():
-    """CFR part filter adds ILIKE clause"""
-    db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", cfr_part_param=["42"])
+def test_get_cfr_docket_ids_single_part():
+    """Single CFR part queries federal_register_documents with one ILIKE clause"""
+    db = DBLayer(conn=_FakeConn([("CMS-2025-0304",)]))
+    result = db._get_cfr_docket_ids(["42"])
     sql, params = db.conn.cursor_obj.executed
-    assert "cp.cfrPart ILIKE %s" in sql
-    assert params == ["%%", "%42%"]
+    assert "federal_register_documents" in sql
+    assert "cfr_part ILIKE %s" in sql
+    assert params == ["%42%"]
+    assert result == {"CMS-2025-0304"}
 
 
-def test_search_dockets_postgres_cfr_part_multi_filter():
+def test_get_cfr_docket_ids_multi_part():
     """Multiple CFR parts produce OR'd ILIKE clauses"""
-    db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", cfr_part_param=["42", "45"])
+    db = DBLayer(conn=_FakeConn([("CMS-2025-0304",), ("CMS-2025-0240",)]))
+    result = db._get_cfr_docket_ids(["42", "45"])
     sql, params = db.conn.cursor_obj.executed
-    assert sql.count("cp.cfrPart ILIKE %s") == 2
+    assert sql.count("cfr_part ILIKE %s") == 2
     assert "%42%" in params
     assert "%45%" in params
+    assert result == {"CMS-2025-0304", "CMS-2025-0240"}
 
 
 def test_search_dockets_postgres_no_filter_no_extra_clauses():
