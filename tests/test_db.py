@@ -113,22 +113,27 @@ def test_search_dockets_postgres_agency_and_docket_type_filter():
 
 
 def test_search_dockets_postgres_cfr_part_filter():
-    """CFR part filter adds ILIKE clause"""
+    """CFR part filter adds title+part ILIKE clause"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", cfr_part_param=["42"])
+    db._search_dockets_postgres("", cfr_part_param=[{"title": "Title 42", "part": "413"}])
     sql, params = db.conn.cursor_obj.executed
+    assert "cp.title ILIKE %s" in sql
     assert "cp.cfrPart ILIKE %s" in sql
-    assert params == ["%%", "%42%"]
+    assert "%Title 42%" in params
+    assert "%413%" in params
 
 
 def test_search_dockets_postgres_cfr_part_multi_filter():
-    """Multiple CFR parts produce OR'd ILIKE clauses"""
+    """Multiple CFR parts produce OR'd title+part ILIKE clauses"""
     db = DBLayer(conn=_FakeConn([]))
-    db._search_dockets_postgres("", cfr_part_param=["42", "45"])
+    db._search_dockets_postgres("", cfr_part_param=[
+        {"title": "Title 42", "part": "413"},
+        {"title": "Title 42", "part": "512"},
+    ])
     sql, params = db.conn.cursor_obj.executed
     assert sql.count("cp.cfrPart ILIKE %s") == 2
-    assert "%42%" in params
-    assert "%45%" in params
+    assert "%413%" in params
+    assert "%512%" in params
 
 
 def test_search_dockets_postgres_no_filter_no_extra_clauses():
