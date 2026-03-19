@@ -1214,13 +1214,18 @@ INSERT INTO cfrParts(
 
 INSERT INTO comments(
     comment_id,
+    api_link,
     document_id,
-    comment_text,
-    comment_link
+    agency_id,
+    document_type,
+    posted_date,
+    comment
 ) VALUES (
     'comment-0001',
+    'http://example.com/comment/1',
     'CMS-2025-0240-0001',
-    'This is a sample comment for testing',
-    'http://example.com/comment/1'
+    'CMS',
+    'Public Submission',
+    '2025-06-30T04:00:00Z',
+    'This is a sample comment for testing'
 );
-
