@@ -31,7 +31,7 @@ class DBLayer:
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
-        return self._search_dockets_postgres(query, docket_type_param, agency, cfr_part_param)
+        return self._search_dockets(query, docket_type_param, agency, cfr_part_param)
 
     def _get_cfr_docket_ids(self, cfr_part_param: List[Dict[str, str]]) -> set:
         clauses = " OR ".join(
