@@ -117,7 +117,15 @@ class DBLayer:
                 "size": 0,
                 "query": {
                     "bool": {
-                        "should": [{"match": {"title": term}} for term in terms],
+                        "should": [
+                        {
+                            "multi_match": {
+                                "query": term,
+                                "fields": ["title", "comment"]
+                            }
+                        }
+                        for term in terms
+                    ],
                         "minimum_should_match": 1
                     }
                 },
@@ -135,7 +143,10 @@ class DBLayer:
                 "size": 0,
                 "query": {
                     "bool": {
-                        "should": [{"match": {"commentText": term}} for term in terms],
+                        "should": [
+                        {"match_phrase": {"commentText": term}}
+                        for term in terms
+                    ],
                         "minimum_should_match": 1
                     }
                 },
@@ -154,15 +165,19 @@ class DBLayer:
             # Process document results
             for bucket in doc_response["aggregations"]["by_docket"]["buckets"]:
                 docket_id = bucket["key"]
-                if docket_id not in docket_counts:
-                    docket_counts[docket_id] = {"document_match_count": 0, "comment_match_count": 0}
+                docket_counts.setdefault(docket_id, {
+                "document_match_count": 0,
+                "comment_match_count": 0
+            })
                 docket_counts[docket_id]["document_match_count"] = bucket["doc_count"]
             
             # Process comment results
             for bucket in comment_response["aggregations"]["by_docket"]["buckets"]:
                 docket_id = bucket["key"]
-                if docket_id not in docket_counts:
-                    docket_counts[docket_id] = {"document_match_count": 0, "comment_match_count": 0}
+                docket_counts.setdefault(docket_id, {
+                "document_match_count": 0,
+                "comment_match_count": 0
+            })
                 docket_counts[docket_id]["comment_match_count"] = bucket["doc_count"]
             
             # Format results
