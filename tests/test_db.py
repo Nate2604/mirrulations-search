@@ -342,6 +342,42 @@ def test_search_dockets_by_cfr_queries_federal_register_documents():
     assert "%413%" in params
 
 
+# --- _search_dockets_by_document_title tests ---
+
+def test_search_dockets_by_document_title_returns_matching_ids():
+    """Returns a set of docket_ids whose documents match the query"""
+    rows = [("DOC-001",), ("DOC-002",)]
+    db = DBLayer(conn=_FakeConn(rows))
+    result = db._search_dockets_by_document_title("clean air")
+    assert result == {"DOC-001", "DOC-002"}
+
+
+def test_search_dockets_by_document_title_no_matches_returns_empty_set():
+    """Returns an empty set when no document titles match"""
+    db = DBLayer(conn=_FakeConn([]))
+    result = db._search_dockets_by_document_title("nonexistent")
+    assert result == set()
+
+
+def test_search_dockets_by_document_title_deduplicates_docket_ids():
+    """Multiple document title matches under the same docket produce only one id in the set"""
+    rows = [("DOC-001",), ("DOC-001",), ("DOC-001",)]
+    db = DBLayer(conn=_FakeConn(rows))
+    result = db._search_dockets_by_document_title("water")
+    assert result == {"DOC-001"}
+    assert len(result) == 1
+
+
+def test_search_dockets_by_document_title_queries_documents_table():
+    """SQL targets documents table with document_title ILIKE and wildcard-wrapped query"""
+    db = DBLayer(conn=_FakeConn([]))
+    db._search_dockets_by_document_title("water quality")
+    sql, params = db.conn.cursor_obj.executed
+    assert "documents" in sql
+    assert "document_title ILIKE %s" in sql
+    assert params == ["%water quality%"]
+
+
 # --- Factory function tests ---
 
 def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
