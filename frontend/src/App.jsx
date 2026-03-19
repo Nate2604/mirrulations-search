@@ -18,7 +18,7 @@ const [yearTo, setYearTo] = useState("");
 const [agencySearch, setAgencySearch] = useState("");
 const [selectedAgencies, setSelectedAgencies] = useState(new Set());
 const [status, setStatus] = useState(new Set());
-const [selectedCfrParts, setSelectedCfrParts] = useState(new Set());
+const [selectedCfrParts, setSelectedCfrParts] = useState({});
 const [page, setPage] = useState(1);
 const [pagination, setPagination] = useState(null);
 const [loading, setLoading] = useState(false);
@@ -47,7 +47,7 @@ const activeCount =
     (yearTo ? 1 : 0) +
     selectedAgencies.size +
     status.size +
-    selectedCfrParts.size;
+    Object.values(selectedCfrParts).reduce((sum, set) => sum + set.size, 0);
 
     const runSearch = async (newPage = 1) => {
       setLoading(true);
@@ -56,7 +56,13 @@ const activeCount =
       try {
         const selectedAgencyList = Array.from(selectedAgencies);
     
-        const selectedCfrList = Array.from(selectedCfrParts);
+        const selectedCfrList = Object.entries(selectedCfrParts).flatMap(
+          ([title, parts]) =>
+            Array.from(parts).map((part) => ({
+              title: Number(title),
+              part
+            }))
+        );
     
         const data = await searchDockets(
           query,
@@ -89,7 +95,7 @@ const clearAdvanced = () => {
     setAgencySearch("");
     setSelectedAgencies(new Set());
     setStatus(new Set());
-    setSelectedCfrParts(new Set());
+    setSelectedCfrParts({});
   };
 
 

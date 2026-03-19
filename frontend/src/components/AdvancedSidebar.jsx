@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "motion/react"
 
 
@@ -41,8 +41,8 @@ export default function AdvancedSidebar({
   setDocType,
   //status,
   //setStatus,
-  //selectedCfrParts,
-  //setSelectedCfrParts,
+  selectedCfrParts,
+  setSelectedCfrParts,
   clearAdvanced,
   applyAdvanced,
   activeCount,
@@ -50,9 +50,93 @@ export default function AdvancedSidebar({
   const docTypes = ["Rulemaking", "Nonrulemaking"];
   //const statuses = ["Open", "Closed", "Pending"];
   const [agencyOrder, setAgencyOrder] = useState([]);
-  /*const cfrParts = Array.from({ length: 200 }, (_, i) => i + 1);
+  const [selectedTitle, setSelectedTitle] = useState("");
+  const titles = Array.from({ length: 50 }, (_, i) => i + 1);
+
+  const selectedCfrList = useMemo(() => {
+    return Object.entries(selectedCfrParts).flatMap(([title, parts]) =>
+      Array.from(parts).map((part) => ({
+        title: Number(title),
+        part
+      }))
+    );
+  }, [selectedCfrParts]);
+
+  const CFR_STRUCTURE = {
+    1: { min: 1, max: 603 },
+    2: { min: 1, max: 6099 },
+    3: { min: 1, max: 102 },
+    4: { min: 1, max: 83 },
+    5: { min: 1, max: 10400 },
+    6: { min: 1, max: 1003 },
+    7: { min: 1, max: 5099 },
+    8: { min: 1, max: 1399 },
+    9: { min: 1, max: 599 },
+    10: { min: 1, max: 1800 },
+    11: { min: 1, max: 9430 },
+    12: { min: 1, max: 1899 },
+    13: { min: 1, max: 500 },
+    14: { min: 1, max: 1399 },
+    15: { min: 1, max: 2099 },
+    16: { min: 1, max: 1799 },
+    17: { min: 1, max: 499 },
+    18: { min: 1, max: 1399 },
+    19: { min: 1, max: 362 },
+    20: { min: 1, max: 1099 },
+    21: { min: 1, max: 1402 },
+    22: { min: 1, max: 1701 },
+    23: { min: 1, max: 1340 },
+    24: { min: 1, max: 4199 },
+    25: { min: 1, max: 1200 },
+    26: { min: 1, max: 899 },
+    27: { min: 1, max: 799 },
+    28: { min: 1, max: 1100 },
+    29: { min: 1, max: 4999 },
+    30: { min: 1, max: 1299 },
+    31: { min: 1, max: 1099 },
+    32: { min: 1, max: 2899 },
+    33: { min: 1, max: 403 },
+    34: { min: 1, max: 1299 }, // Title 35 is reserved and doesn't appear to have any publically available parts
+    36: { min: 1, max: 1600 },
+    37: { min: 1, max: 501 },
+    38: { min: 1, max: 200 },
+    39: { min: 1, max: 3099 },
+    40: { min: 1, max: 1900 },
+    41: { min: 1, max: 304 },
+    42: { min: 1, max: 1099 },
+    43: { min: 1, max: 10099 },
+    44: { min: 1, max: 402 },
+    45: { min: 1, max: 2599 },
+    46: { min: 1, max: 599 },
+    47: { min: 1, max: 550 },
+    48: { min: 1, max: 9999 },
+    49: { min: 1, max: 1699 },
+    50: { min: 1, max: 699 }
+  };
+
+  function generatePartsForTitle(title) {
+    const range = CFR_STRUCTURE[title];
+    if (!range) return [];
+  
+    return Array.from(
+      { length: range.max - range.min + 1 },
+      (_, i) => i + range.min
+    );
+  }
+
+  const cfrParts = selectedTitle
+  ? generatePartsForTitle(selectedTitle)
+  : [];
+
+  // Because different titles have differing amount of CFR Parts, the following structure
+  // Uses information from ecfr.gov to build the appropriate amount of parts per title
+
   const [cfrSearch, setCfrSearch] = useState("");
-  const [cfrOrder, setCfrOrder] = useState(cfrParts);*/
+  const [cfrOrder, setCfrOrder] = useState([]);
+
+  useEffect(() => {
+    setCfrOrder(cfrParts);
+  }, [cfrParts]);
 
   const orderedAgencies = useMemo(() => {
     const order =
@@ -89,27 +173,17 @@ export default function AdvancedSidebar({
     });
   };
 
-  /*const filteredCfrParts = useMemo(() => {
-    const rawQuery = cfrSearch.trim().toLowerCase();
-    if (!rawQuery) {
-      return cfrOrder;
-    }
-
-    const numericQuery = rawQuery.replace(/[^0-9]/g, "");
-
-    return cfrOrder.filter((part) => {
-      const partText = String(part);
-
-      if (numericQuery) {
-        return partText.includes(numericQuery);
-      }
-
-      return (
-        partText.includes(rawQuery) ||
-        `part ${partText}`.includes(rawQuery) ||
-        `cfr part ${partText}`.includes(rawQuery)
-      );
-    });
+  const filteredCfrParts = useMemo(() => {
+    const rawQuery = cfrSearch.trim();
+    if (!rawQuery) return cfrOrder;
+  
+    // The below code checks to make sure the string is just numbers
+    // /d+ means "match a string that consists of one or more digits from start to end"
+    // ^ and $ are anchors that assert the start and end of the string, ensuring that the entire string is made up of digits.
+    if (!/^\d+$/.test(rawQuery)) return [];
+  
+    // Exact match!
+    return cfrOrder.filter((part) => String(part) === rawQuery);
   }, [cfrSearch, cfrOrder]);
 
   const visibleCfrParts = useMemo(() => {
@@ -117,23 +191,33 @@ export default function AdvancedSidebar({
       return filteredCfrParts;
     }
 
-    const minVisible = Math.max(5, selectedCfrParts.size);
-    return filteredCfrParts.slice(0, minVisible);
-  }, [cfrSearch, filteredCfrParts, selectedCfrParts.size]);
+  const selectedCount = Object.values(selectedCfrParts).reduce((sum, set) => sum + set.size, 0);
 
-  const toggleCfrPart = (part) => {
+  const minVisible = Math.max(5, selectedCount);
+  
+    return filteredCfrParts.slice(0, minVisible);
+  }, [cfrSearch, filteredCfrParts, selectedCfrParts]);
+
+  const toggleCfrPart = (title, part) => {
     setSelectedCfrParts((prev) => {
-      const next = new Set(prev);
-      if (next.has(part)) {
-        next.delete(part);
-      } else {
-        next.add(part);
+      const next = { ...prev };
+  
+      if (!next[title]) {
+        next[title] = new Set();
       }
+  
+      if (next[title].has(part)) {
+        next[title].delete(part);
+        if (next[title].size === 0) delete next[title];
+      } else {
+        next[title].add(part);
+      }
+  
       return next;
     });
-
+  
     setCfrOrder((prev) => [part, ...prev.filter((p) => p !== part)]);
-  };*/
+  };
 
   return (
     <motion.aside className="sidebar"
@@ -244,33 +328,59 @@ export default function AdvancedSidebar({
             )}
           </CollapsibleSection>
 
-          {/* CFR Part
-          <CollapsibleSection title="CFR Part">
+          {/* CFR Part */}
+          <CollapsibleSection title="CFR Title">
+            <select
+              value={selectedTitle}
+              onChange={(e) => setSelectedTitle(Number(e.target.value))}
+            >
+              <option value="">Select Title</option>
+              {titles.map((t) => (
+                <option key={t} value={t}>
+                  Title {t}
+                </option>
+              ))}
+            </select>
+          </CollapsibleSection>
+
+          {selectedTitle && (
+          <CollapsibleSection title={`Title ${selectedTitle} Parts`}>
             <input
               value={cfrSearch}
               onChange={(e) => setCfrSearch(e.target.value)}
-              placeholder="Search CFR part number…"
+              placeholder="Search CFR part…"
             />
 
-            <div className="agencyListStatic">
-              {visibleCfrParts.map((part) => (
-                <label key={part} className="check">
-                  <input
-                    type="checkbox"
-                    checked={selectedCfrParts.has(part)}
-                    onChange={() => toggleCfrPart(part)}
-                  />
-                  <span>Part {part}</span>
-                </label>
-              ))}
-            </div>
+            {visibleCfrParts.map((part) => (
+              <label key={part} className="check">
+                <input
+                  type="checkbox"
+                  checked={selectedCfrParts[selectedTitle]?.has(part) || false}
+                  onChange={() => toggleCfrPart(selectedTitle, part)}
+                />
+                <span>Part {part}</span>
+              </label>
+            ))}
+          </CollapsibleSection>
+          )}
+          
+          {selectedCfrList.length > 0 && (
+          <CollapsibleSection title="Selected CFR Filters">
+            {selectedCfrList.map(({ title, part }) => (
+              <label key={`${title}-${part}`} className="check">
+                <input
+                  type="checkbox"
+                  checked={true}
+                  onChange={() => toggleCfrPart(title, part)}
+                />
+                <span>
+                  Title {title} Part {part}
+                </span>
+              </label>
+            ))}
+          </CollapsibleSection>
+          )}
 
-            {!cfrSearch.trim() && selectedCfrParts.size <= 5 && (
-              <div className="hintText">
-                Showing top 5 parts. Selecting a part moves it to the top.
-              </div>
-            )}
-          </CollapsibleSection> */}
 
           {/* Doc type */}
           <section className="section">
