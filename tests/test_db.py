@@ -410,6 +410,54 @@ def test_join_results_all_empty_returns_empty_set():
     assert result == set()
 
 
+# --- _search_dockets tests ---
+
+def test_search_dockets_returns_empty_when_no_ids_found(monkeypatch):
+    """Returns [] immediately when all three helpers return empty sets"""
+    db = DBLayer(conn=_FakeConn([]))
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_title", lambda self, q: set())
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_cfr", lambda self, c: set())
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_document_title", lambda self, q: set())
+    assert db._search_dockets("anything") == []
+
+
+def test_search_dockets_returns_docket_details_for_matched_ids(monkeypatch):
+    """Returns processed docket details for ids returned by the helpers"""
+    rows = [("DOC-001", "Test Docket", "CMS", "Rulemaking", "2024-01-01", None, None, None)]
+    db = DBLayer(conn=_FakeConn(rows))
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_title", lambda self, q: {"DOC-001"})
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_cfr", lambda self, c: set())
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_document_title", lambda self, q: set())
+    results = db._search_dockets("test")
+    assert len(results) == 1
+    assert results[0]["docket_id"] == "DOC-001"
+    assert results[0]["docket_title"] == "Test Docket"
+
+
+def test_search_dockets_applies_docket_type_filter(monkeypatch):
+    """docket_type_param is added as a filter clause in the details query"""
+    db = DBLayer(conn=_FakeConn([]))
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_title", lambda self, q: {"DOC-001"})
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_cfr", lambda self, c: set())
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_document_title", lambda self, q: set())
+    db._search_dockets("test", docket_type_param="Rulemaking")
+    sql, params = db.conn.cursor_obj.executed
+    assert "d.docket_type = %s" in sql
+    assert "Rulemaking" in params
+
+
+def test_search_dockets_applies_agency_filter(monkeypatch):
+    """agency filter is added as an ILIKE clause in the details query"""
+    db = DBLayer(conn=_FakeConn([]))
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_title", lambda self, q: {"DOC-001"})
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_cfr", lambda self, c: set())
+    monkeypatch.setattr(DBLayer, "_search_dockets_by_document_title", lambda self, q: set())
+    db._search_dockets("test", agency=["CMS"])
+    sql, params = db.conn.cursor_obj.executed
+    assert "agency_id ILIKE %s" in sql
+    assert "%CMS%" in params
+
+
 # --- Factory function tests ---
 
 def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
