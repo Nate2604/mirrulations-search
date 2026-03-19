@@ -277,6 +277,33 @@ def test_search_dockets_postgres_empty_query_uses_wildcard():
     assert params == ["%%"]
 
 
+# --- _search_dockets_by_title tests ---
+
+def test_search_dockets_by_title_returns_matching_ids():
+    """Returns a set of docket_ids whose titles match the query"""
+    rows = [("DOC-001",), ("DOC-002",)]
+    db = DBLayer(conn=_FakeConn(rows))
+    result = db._search_dockets_by_title("clean air")
+    assert result == {"DOC-001", "DOC-002"}
+
+
+def test_search_dockets_by_title_no_matches_returns_empty_set():
+    """Returns an empty set when no titles match"""
+    db = DBLayer(conn=_FakeConn([]))
+    result = db._search_dockets_by_title("nonexistent")
+    assert result == set()
+
+
+def test_search_dockets_by_title_query_wrapped_with_wildcards():
+    """Query is wrapped with %...% wildcards in the SQL params"""
+    db = DBLayer(conn=_FakeConn([]))
+    db._search_dockets_by_title("water")
+    sql, params = db.conn.cursor_obj.executed
+    assert "dockets" in sql
+    assert "docket_title ILIKE %s" in sql
+    assert params == ["%water%"]
+
+
 # --- Factory function tests ---
 
 def test_get_postgres_connection_uses_env_and_dotenv(monkeypatch):
