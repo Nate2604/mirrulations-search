@@ -59,12 +59,12 @@ class DBLayer:
                 d.docket_type,
                 d.modify_date,
                 cp.title,
-                cp.cfrPart,
+                cp.cfrpart,
                 l.link
             FROM dockets d
             JOIN documents doc ON doc.docket_id = d.docket_id
             LEFT JOIN cfrparts cp ON cp.document_id = doc.document_id
-            LEFT JOIN links l ON l.title = cp.title AND l.cfrPart = cp.cfrPart
+            LEFT JOIN links l ON l.title = cp.title AND l.cfrpart = cp.cfrpart
             WHERE d.docket_title ILIKE %s
         """
         params = [f"%{(query or '').strip().lower()}%"]
@@ -78,7 +78,7 @@ class DBLayer:
             sql += f" AND ({clauses})"
             params.extend(f"%{a}%" for a in agency)
 
-        sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrPart LIMIT 50"
+        sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrpart LIMIT 50"
 
         with self.conn.cursor() as cur:
             cur.execute(sql, params)
@@ -154,9 +154,14 @@ class DBLayer:
         right fields for each docket.
         """
         title_ids = self._search_dockets_by_title(query)
-        cfr_ids = self._search_dockets_by_cfr(cfr_part_param or [])
         doc_title_ids = self._search_dockets_by_document_title(query)
-        docket_ids = self._join_results(title_ids, cfr_ids, doc_title_ids)
+        text_ids = title_ids | doc_title_ids
+
+        if cfr_part_param:
+            cfr_ids = self._search_dockets_by_cfr(cfr_part_param)
+            docket_ids = text_ids & cfr_ids  # intersection: must match both
+        else:
+            docket_ids = text_ids
 
         if not docket_ids:
             return []
@@ -169,12 +174,12 @@ class DBLayer:
                 d.docket_type,
                 d.modify_date,
                 cp.title,
-                cp.cfrPart,
+                cp.cfrpart,
                 l.link
             FROM dockets d
             JOIN documents doc ON doc.docket_id = d.docket_id
             LEFT JOIN cfrparts cp ON cp.document_id = doc.document_id
-            LEFT JOIN links l ON l.title = cp.title AND l.cfrPart = cp.cfrPart
+            LEFT JOIN links l ON l.title = cp.title AND l.cfrpart = cp.cfrpart
             WHERE d.docket_id = ANY(%s)
         """
         params = [list(docket_ids)]
@@ -188,7 +193,7 @@ class DBLayer:
             sql += f" AND ({clauses})"
             params.extend(f"%{a}%" for a in agency)
 
-        sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrPart LIMIT 50"
+        sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrpart LIMIT 50"
 
         with self.conn.cursor() as cur:
             cur.execute(sql, params)
