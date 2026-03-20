@@ -132,96 +132,57 @@ class DBLayer:
                 for d in dockets.values()
             ]
 
-    def text_match_terms(  # pylint: disable=too-many-locals
-        self, terms: List[str], opensearch_client=None) -> List[Dict[str, Any]]:
+    @staticmethod
+    def _build_docket_agg_query(agg_name: str, match_clauses: List[Dict]) -> Dict:
+        """Build a docket-bucketed aggregation query with an inner filter."""
+        return {
+            "size": 0,
+            "aggs": {
+                "by_docket": {
+                    "terms": {"field": "docketId.keyword", "size": 1000},
+                    "aggs": {
+                        agg_name: {
+                            "filter": {
+                                "bool": {
+                                    "should": match_clauses,
+                                    "minimum_should_match": 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    @staticmethod
+    def _accumulate_counts(
+            docket_counts: Dict, buckets: List, agg_name: str, count_key: str) -> None:
+        """Add match counts from OpenSearch buckets into docket_counts in place."""
+        for bucket in buckets:
+            match_count = bucket[agg_name]["doc_count"]
+            if match_count > 0:
+                docket_id = bucket["key"]
+                docket_counts.setdefault(
+                    docket_id, {"document_match_count": 0, "comment_match_count": 0}
+                )
+                docket_counts[docket_id][count_key] += match_count
+
+    def text_match_terms(
+            self, terms: List[str], opensearch_client=None) -> List[Dict[str, Any]]:
         """
         Search OpenSearch for dockets containing the given terms.
-        Searches across both comments and documents indices.
+
+        Searches:
+        - documents index: title and comment fields
+        - comments index: commentText field (phrase matching)
+        - comments_extracted_text index: extractedText field (from PDF attachments)
+
         Returns list of {docket_id, document_match_count, comment_match_count}
         """
         if opensearch_client is None:
             opensearch_client = get_opensearch_connection()
-
         try:
-            # Search documents index
-            doc_query = {
-                "size": 0,
-                "query": {
-                    "bool": {
-                        "should": [
-                        {
-                            "multi_match": {
-                                "query": term,
-                                "fields": ["title", "comment"]
-                            }
-                        }
-                        for term in terms
-                    ],
-                        "minimum_should_match": 1
-                    }
-                },
-                "aggs": {
-                    "by_docket": {
-                        "terms": {"field": "docketId.keyword", "size": 1000}
-                    }
-                }
-            }
-
-            doc_response = opensearch_client.search(index="documents", body=doc_query)
-
-            # Search comments index
-            comment_query = {
-                "size": 0,
-                "query": {
-                    "bool": {
-                        "should": [
-                        {"match_phrase": {"commentText": term}}
-                        for term in terms
-                    ],
-                        "minimum_should_match": 1
-                    }
-                },
-                "aggs": {
-                    "by_docket": {
-                        "terms": {"field": "docketId.keyword", "size": 1000}
-                    }
-                }
-            }
-
-            comment_response = opensearch_client.search(index="comments", body=comment_query)
-
-            # Combine results
-            docket_counts = {}
-
-            # Process document results
-            for bucket in doc_response["aggregations"]["by_docket"]["buckets"]:
-                docket_id = bucket["key"]
-                docket_counts.setdefault(docket_id, {
-                "document_match_count": 0,
-                "comment_match_count": 0
-            })
-                docket_counts[docket_id]["document_match_count"] = bucket["doc_count"]
-
-            # Process comment results
-            for bucket in comment_response["aggregations"]["by_docket"]["buckets"]:
-                docket_id = bucket["key"]
-                docket_counts.setdefault(docket_id, {
-                "document_match_count": 0,
-                "comment_match_count": 0
-            })
-                docket_counts[docket_id]["comment_match_count"] = bucket["doc_count"]
-
-            # Format results
-            results = []
-            for docket_id, counts in docket_counts.items():
-                results.append({
-                    "docket_id": docket_id,
-                    "document_match_count": counts["document_match_count"],
-                    "comment_match_count": counts["comment_match_count"]
-                })
-
-            return results
-
+            return self._run_text_match_queries(opensearch_client, terms)
         except (KeyError, AttributeError) as e:
             # Malformed responses are treated as "no OpenSearch hits"
             print(f"OpenSearch query failed: {e}")
@@ -306,6 +267,46 @@ class DBLayer:
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"OpenSearch totals query failed (fallback zeros): {e}")
             return {}
+
+    def _run_text_match_queries(
+            self, opensearch_client, terms: List[str]) -> List[Dict[str, Any]]:
+        """Execute all three OpenSearch queries and merge their results."""
+        def buckets(resp):
+            return resp["aggregations"]["by_docket"]["buckets"]
+
+        def safe_search(index: str, body: Dict) -> Dict:
+            """Run a search and degrade to empty buckets if the index is unavailable."""
+            try:
+                return opensearch_client.search(index=index, body=body)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                print(f"OpenSearch index query failed for '{index}': {e}")
+                return {"aggregations": {"by_docket": {"buckets": []}}}
+
+        docket_counts: Dict = {}
+        doc_resp = safe_search("documents", self._build_docket_agg_query(
+            "matching_docs",
+            [{"multi_match": {"query": t, "fields": ["title", "comment"]}} for t in terms]
+        ))
+        comment_resp = safe_search("comments", self._build_docket_agg_query(
+            "matching_comments",
+            [{"match_phrase": {"commentText": t}} for t in terms]
+        ))
+        extracted_resp = safe_search(
+            "comments_extracted_text",
+            self._build_docket_agg_query(
+                "matching_extracted", [{"match_phrase": {"extractedText": t}} for t in terms]
+            ),
+        )
+        self._accumulate_counts(
+            docket_counts, buckets(doc_resp), "matching_docs", "document_match_count"
+        )
+        self._accumulate_counts(
+            docket_counts, buckets(comment_resp), "matching_comments", "comment_match_count"
+        )
+        self._accumulate_counts(
+            docket_counts, buckets(extracted_resp), "matching_extracted", "comment_match_count"
+        )
+        return [{"docket_id": did, **counts} for did, counts in docket_counts.items()]
 
 
 def _get_secrets_from_aws() -> Dict[str, str]:

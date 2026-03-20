@@ -2,6 +2,17 @@
 from mirrsearch.db import get_db
 
 
+def _correlation_score(row, support_k=10):
+    """Compute ratio score with support bias toward larger denominator."""
+    match_total = int(row.get("document_match_count", 0)) + int(row.get("comment_match_count", 0))
+    total = int(row.get("document_total_count", 0)) + int(row.get("comment_total_count", 0))
+    if total <= 0:
+        return 0.0
+    ratio = match_total / total
+    support = total / (total + support_k)
+    return ratio * support
+
+
 def _row_docket_key(row):
     """Stable id for de-duping SQL vs OpenSearch (Postgres uses docket_id; some mocks use id)."""
     if "docket_id" in row:
@@ -88,6 +99,17 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
             totals = totals_map.get(did, {})
             row["document_total_count"] = totals.get("document_total_count", 0)
             row["comment_total_count"] = totals.get("comment_total_count", 0)
+            row["correlation_score"] = _correlation_score(row)
+
+        # Rank by correlation score, then by raw match counts.
+        all_results.sort(
+            key=lambda r: (
+                r.get("correlation_score", 0.0),
+                int(r.get("document_match_count", 0)) + int(r.get("comment_match_count", 0)),
+                int(r.get("document_total_count", 0)) + int(r.get("comment_total_count", 0)),
+            ),
+            reverse=True
+        )
 
         total_results = len(all_results)
         total_pages = (total_results + page_size - 1) // page_size
