@@ -27,11 +27,13 @@ class DBLayer:
             query: str,
             docket_type_param: str = None,
             agency: List[str] = None,
-            cfr_part_param: List[str] = None) \
+            cfr_part_param: List[str] = None,
+            start_date: str = None,
+            end_date: str = None) \
             -> List[Dict[str, Any]]:
         if self.conn is None:
             return []
-        return self._search_dockets(query, docket_type_param, agency, cfr_part_param)
+        return self._search_dockets(query, docket_type_param, agency, cfr_part_param, start_date, end_date)
 
     def _get_cfr_docket_ids(self, cfr_part_param: List[Dict[str, str]]) -> set:
         clauses = " OR ".join(
@@ -50,7 +52,9 @@ class DBLayer:
     def _search_dockets_postgres(  # pylint: disable=too-many-locals
             self, query: str, docket_type_param: str = None,
             agency: List[str] = None,
-            cfr_part_param: List[str] = None) -> List[Dict[str, Any]]:
+            cfr_part_param: List[str] = None,
+            start_date: str = None, 
+            end_date: str = None) -> List[Dict[str, Any]]:
         sql = """
             SELECT DISTINCT
                 d.docket_id,
@@ -147,7 +151,9 @@ class DBLayer:
     def _search_dockets(  # pylint: disable=too-many-locals
             self, query: str, docket_type_param: str = None,
             agency: List[str] = None,
-            cfr_part_param: List[str] = None) -> List[Dict[str, Any]]:
+            cfr_part_param: List[str] = None,
+            start_date: str = None,
+            end_date: str = None) -> List[Dict[str, Any]]:
         """
         Return the list of all the unique dockets & the corresponding
         information needed for the frontend display by joining tables & pulling out the
@@ -187,6 +193,14 @@ class DBLayer:
             clauses = " OR ".join("d.agency_id ILIKE %s" for _ in agency)
             sql += f" AND ({clauses})"
             params.extend(f"%{a}%" for a in agency)
+            
+        if start_date:
+            sql += " AND d.modify_date::date >= %s::date"
+            params.append(start_date)
+
+        if end_date:
+            sql += " AND d.modify_date::date <= %s::date"
+            params.append(end_date)
 
         sql += " ORDER BY d.modify_date DESC, d.docket_id, cp.title, cp.cfrPart LIMIT 50"
 
@@ -199,7 +213,6 @@ class DBLayer:
                 {**d, "cfr_refs": list(d["cfr_refs"].values())}
                 for d in dockets.values()
             ]
-
 
     @staticmethod
     def _process_docket_row(dockets, row):
