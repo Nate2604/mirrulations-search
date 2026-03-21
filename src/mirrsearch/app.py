@@ -85,7 +85,7 @@ def _handle_oauth_callback(handler):
         return redirect("/")
 
 
-def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: disable=too-many-locals
+def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: disable=too-many-locals,too-many-statements
     """Create and configure Flask application"""
     if dist_dir is None:
         project_root = os.path.abspath(
