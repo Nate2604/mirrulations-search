@@ -1,6 +1,6 @@
 import { useMemo, useState,useEffect } from "react";
 import "./styles/app.css";
-import { searchDockets } from "./api/searchApi";
+import { searchDockets, getAuthStatus } from "./api/searchApi";
 import AdvancedSidebar from "./components/AdvancedSidebar";
 import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
@@ -23,6 +23,14 @@ const [page, setPage] = useState(1);
 const [pagination, setPagination] = useState(null);
 const [loading, setLoading] = useState(false);
 const [hasSearched, setHasSearched] = useState(false);
+const [unauthorized, setUnauthorized] = useState(false);
+const [user, setUser] = useState(null);
+
+useEffect(() => {
+  getAuthStatus().then(data => {
+    if (data.logged_in) setUser({ name: data.name, email: data.email });
+  });
+}, []);
 
 const TOP_AGENCIES = [
     { code: "EPA", name: "Environmental Protection Agency" },
@@ -52,6 +60,7 @@ const activeCount =
     const runSearch = async (newPage = 1) => {
       setLoading(true);
       setHasSearched(true);
+      setUnauthorized(false);
     
       try {
         const selectedAgencyList = Array.from(selectedAgencies);
@@ -77,6 +86,9 @@ const activeCount =
         setPage(newPage);
 
       } catch (err) {
+        if (err.message === "UNAUTHORIZED") {
+          setUnauthorized(true);
+        }
         console.error("Search failed:", err);
       } finally {
         setLoading(false);
@@ -107,7 +119,14 @@ return (
 <div className="page">
 <header className="topbar">
 <div className="brand">Mirrulations</div>
-{/*<button className="btn btn-primary">Log Out</button>*/}
+{user ? (
+  <div className="auth-section">
+    <span className="auth-name">{user.name}</span>
+    <a href="/logout" className="btn btn-primary">Log Out</a>
+  </div>
+) : (
+  <a href="/login" className="btn btn-primary">Log In</a>
+)}
 </header>
 <div className="layout">
 <AdvancedSidebar
@@ -151,7 +170,7 @@ advancedPayload={advancedPayload}
 results={results}
 loading={loading}
 hasSearched={hasSearched}
-
+unauthorized={unauthorized}
 />
 <div className="pagination-div">
   <button className="page-button" disabled={!pagination?.hasPrev} onClick={() => runSearch(page - 1)}><ArrowLeftIcon color="white" size={32}/></button>

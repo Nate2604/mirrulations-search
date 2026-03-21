@@ -167,8 +167,11 @@
 	font-weight: 800;
   }
   
-  .btn-primary{ background:#5a5fe6; color:#fff; }
+  .btn-primary{ background:#5a5fe6; color:#fff; text-decoration:none; }
   .btn-primary:hover{ background:#4a50da; }
+
+  .auth-section{ display:flex; align-items:center; gap:12px; }
+  .auth-name{ font-weight:600; color:#333; }
   
   .btn-ghost{
 	background: transparent;
