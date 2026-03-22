@@ -46,23 +46,37 @@ def _cfr_filter_to_part_patterns(cfr_part_param):
     return patterns
 
 
+def _docket_type_matches_filter(row, docket_type_param):
+    """Postgres: d.docket_type = %s when filter set."""
+    return not docket_type_param or row.get("docket_type") == docket_type_param
+
+
+def _agency_matches_filter(row, agency):
+    """Postgres: OR of d.agency_id ILIKE %s when agency list set."""
+    if not agency:
+        return True
+    aid = (row.get("agency_id") or "").lower()
+    return any((a or "").strip().lower() in aid for a in agency)
+
+
+def _cfr_matches_filter(row, cfr_part_param):
+    """Postgres: OR of cp.cfrPart ILIKE when CFR filter set."""
+    if not cfr_part_param:
+        return True
+    patterns = _cfr_filter_to_part_patterns(cfr_part_param)
+    return not patterns or _cfr_part_patterns_match_row(row, patterns)
+
+
 def _row_matches_advanced_filters(row, docket_type_param, agency, cfr_part_param):
     """
     Same constraints as _search_dockets_postgres for full-text rows loaded via get_dockets_by_ids.
     Drops OpenSearch-only hits that fail advanced filters.
     """
-    if docket_type_param:
-        if row.get("docket_type") != docket_type_param:
-            return False
-    if agency:
-        aid = (row.get("agency_id") or "").lower()
-        if not any((a or "").strip().lower() in aid for a in agency):
-            return False
-    if cfr_part_param:
-        patterns = _cfr_filter_to_part_patterns(cfr_part_param)
-        if patterns and not _cfr_part_patterns_match_row(row, patterns):
-            return False
-    return True
+    return (
+        _docket_type_matches_filter(row, docket_type_param)
+        and _agency_matches_filter(row, agency)
+        and _cfr_matches_filter(row, cfr_part_param)
+    )
 
 
 class InternalLogic:  # pylint: disable=too-few-public-methods
