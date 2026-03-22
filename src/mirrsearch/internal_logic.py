@@ -1,4 +1,6 @@
 """Internal logic module for search operations with pagination"""
+from typing import List
+from mirrsearch import db
 from mirrsearch.db import get_db
 
 
@@ -60,3 +62,6 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
                 "has_prev": page > 1
             }
         }
+
+    def get_agencies(self) -> List[str]:
+        return self.db_layer.get_agencies()
