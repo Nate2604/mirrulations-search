@@ -84,6 +84,46 @@ INSERT INTO dockets (
     'This proposed rule addresses changes to the physician fee schedule and  Medicare Part B payment policies to ensure that payment systems are updated to reflect changes in medical practice, relative value of services, and changes in the statute; codification of new policies for the Medicare Prescription Drug Inflation Rebate Program under the Inflation Reduction Act of 2022; the Ambulatory Specialty Model; updates to the Medicare Diabetes Prevention Program expanded model; updates to drugs and biological products paid under Part B; Medicare Shared Savings Program requirements; updates to the Quality Payment Program; updates to policies for Rural Health Clinics and Federally Qualified Health Centers update to the Ambulance Fee Schedule regulations; codification of the Inflation Reduction Act and Consolidated Appropriations Act, 2023 provisions; and updates to the Medicare Promoting Interoperability Program.'
 );
 
+INSERT INTO dockets (
+    docket_id,
+    docket_api_link,
+    agency_id,
+    docket_category,
+    docket_type,
+    effective_date,
+    flex_field1,
+    flex_field2,
+    modify_date,
+    organization,
+    petition_nbr,
+    program,
+    rin,
+    short_title,
+    flex_subtype1,
+    flex_subtype2,
+    docket_title,
+    docket_abstract
+) VALUES (
+    'OSHA-2025-0005',
+    'https://api.regulations.gov/v4/dockets/OSHA-2025-0005',
+    'OSHA',
+    NULL,
+    'Nonrulemaking',
+    NULL,
+    NULL,
+    NULL,
+    '2025-07-24T13:04:43Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    'Japan Electrical Safety & Environmental Technology Laboratories - NRTL Application',
+    'Japan Electrical Safety & Environmental Technology Laboratories - NRTL Application'
+);
+
 -- =========================================
 -- DOCUMENTS
 -- =========================================
