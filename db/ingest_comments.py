@@ -8,6 +8,7 @@ Directory layout after S3 download:
     <output-folder>/<DOCKET-ID>/raw-data/comments/*.json
 
 Examples:
+    python db/ingest_comments.py   # prompts for docket ID; S3 download if ./<ID>/ has no comments yet
     python db/ingest_comments.py --docket-dir ./CMS-2025-0240
     python db/ingest_comments.py --download-s3 CMS-2025-0240 --output-folder .
     python db/ingest_comments.py --download-s3 CMS-2025-0240 --download-only
@@ -21,6 +22,7 @@ import logging
 import os
 import queue
 import sys
+import warnings
 import threading
 import time
 from pathlib import Path
@@ -36,6 +38,12 @@ try:
     from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
+
+# Boto3 warns on Python 3.9 EOL; unrelated to this script.
+warnings.filterwarnings(
+    "ignore",
+    message=".*Boto3 will no longer support Python 3.9.*",
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,8 +69,22 @@ def _s3():
     return _s3_client
 
 
+def _normalize_docket_id(docket_id: str) -> str:
+    """
+    Mirrulations S3 keys use upper-case agency (e.g. FAA-2025-0618).
+    Accepts user input in any case.
+    """
+    s = docket_id.strip()
+    if not s:
+        return s
+    if "-" not in s:
+        return s.upper()
+    head, tail = s.split("-", 1)
+    return f"{head.split('_')[0].upper()}-{tail}"
+
+
 def _s3_agency(docket: str) -> str:
-    return docket.split("-")[0].split("_")[0]
+    return _normalize_docket_id(docket).split("-")[0]
 
 
 def _s3_key_exists(prefix: str) -> bool:
@@ -172,6 +194,7 @@ def download_docket_from_s3(
     Download mirrulations S3 data into ``{output_folder}/{docket_id}/``.
     Returns path to the docket directory (for ingest).
     """
+    docket_id = _normalize_docket_id(docket_id)
     agency = _s3_agency(docket_id)
     raw_agency_docket_prefix = f"{RAW_DATA_PREFIX}/{agency}/{docket_id}/"
     raw_text_prefix = f"{RAW_DATA_PREFIX}/{agency}/{docket_id}/text-{docket_id}/"
@@ -179,10 +202,23 @@ def download_docket_from_s3(
     derived_prefix = f"{DERIVED_DATA_PREFIX}/{agency}/{docket_id}/"
 
     if not _s3_key_exists(raw_agency_docket_prefix):
-        log.error("Docket %s (agency %s) not found in S3.", docket_id, agency)
+        log.error(
+            "No data at s3://%s/%s — docket may be missing or id casing wrong.",
+            S3_BUCKET,
+            raw_agency_docket_prefix,
+        )
+        log.error(
+            "Expected layout: raw-data/<AGENCY>/<DOCKET-ID>/ (AGENCY upper-case, e.g. FAA-2025-0618)."
+        )
+        log.error("You passed normalized id %r, agency %r.", docket_id, agency)
         sys.exit(1)
     if not _s3_key_exists(raw_text_prefix):
-        log.error("Text data for docket %s not found in S3.", docket_id)
+        log.error(
+            "No text bundle at s3://%s/%s (need text-%s/ under the docket folder).",
+            S3_BUCKET,
+            raw_text_prefix,
+            docket_id,
+        )
         sys.exit(1)
 
     docket_root = Path(output_folder).resolve() / docket_id
@@ -405,29 +441,16 @@ def fetch_valid_document_ids(conn) -> set[str]:
         return {row[0] for row in cur.fetchall()}
 
 
+def fetch_valid_docket_ids(conn) -> set[str]:
+    """Return docket_id values present in dockets (comments.docket_id FK)."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT docket_id FROM dockets;")
+        return {row[0] for row in cur.fetchall()}
+
+
 # ---------------------------------------------------------------------------
 # Core ingest logic
 # ---------------------------------------------------------------------------
-
-def prompt_docket_dir() -> Path:
-    """Interactively ask the user for the docket directory and validate it."""
-    while True:
-        raw = input("Enter path to docket directory (e.g. ./CMS-2025-0240): ").strip()
-        if not raw:
-            print("Path cannot be empty. Please try again.")
-            continue
-        docket_dir = Path(raw).expanduser().resolve()
-        comments_dir = docket_dir / "raw-data" / "comments"
-        if not docket_dir.is_dir():
-            print(f"  Directory not found: {docket_dir}")
-            print("  Please enter a valid path.")
-            continue
-        if not comments_dir.is_dir():
-            print(f"  Expected comments folder not found: {comments_dir}")
-            print("  Make sure the docket has a raw-data/comments/ subdirectory.")
-            continue
-        return docket_dir
-
 
 def find_json_files(docket_dir: Path) -> list[Path]:
     """Find all comment JSON files under <docket_dir>/raw-data/comments/."""
@@ -452,12 +475,15 @@ def ingest(files: list[Path], conn, dry_run: bool = False) -> tuple[int, int]:
     batch: list[tuple] = []
     skipped = 0
     nulled_doc_ids = 0
+    nulled_docket_ids = 0
     batch_size = 500
 
     valid_doc_ids: set[str] = set()
+    valid_docket_ids: set[str] = set()
     if not dry_run:
         valid_doc_ids = fetch_valid_document_ids(conn)
-        log.info("Loaded %d known document_id(s) from documents table.", len(valid_doc_ids))
+        valid_docket_ids = fetch_valid_docket_ids(conn)
+        log.info("Loaded %d document_id(s), %d docket_id(s) from DB.", len(valid_doc_ids), len(valid_docket_ids))
 
     def flush(batch_local):
         if dry_run:
@@ -502,6 +528,16 @@ def ingest(files: list[Path], conn, dry_run: bool = False) -> tuple[int, int]:
             record["document_id"] = None
             nulled_doc_ids += 1
 
+        docket_id_val = record.get("docket_id")
+        if docket_id_val and not dry_run and docket_id_val not in valid_docket_ids:
+            log.warning(
+                "%s: docket_id '%s' not in dockets table — setting to NULL (add docket row to preserve FK).",
+                path.name,
+                docket_id_val,
+            )
+            record["docket_id"] = None
+            nulled_docket_ids += 1
+
         batch.append(row_tuple(record))
 
         if len(batch) >= batch_size:
@@ -513,8 +549,13 @@ def ingest(files: list[Path], conn, dry_run: bool = False) -> tuple[int, int]:
 
     if nulled_doc_ids:
         log.info(
-            "%d comment(s) had their document_id set to NULL due to missing FK references.",
+            "%d comment(s) had document_id set to NULL due to missing documents row.",
             nulled_doc_ids,
+        )
+    if nulled_docket_ids:
+        log.info(
+            "%d comment(s) had docket_id set to NULL due to missing dockets row.",
+            nulled_docket_ids,
         )
 
     processed = len(files) - skipped
@@ -552,11 +593,11 @@ def parse_args():
     p.add_argument(
         "--download-only",
         action="store_true",
-        help="Only run S3 download (--download-s3 required); skip database ingest",
+        help="Only S3 download, no DB (use with --download-s3 or run without --docket-dir to be prompted)",
     )
     p.add_argument(
         "--docket-dir",
-        help="Path to docket folder containing raw-data/comments/ (skips prompt if set)",
+        help="Path to docket folder with raw-data/comments/ (if unset and no --download-s3, prompts for docket ID)",
     )
     p.add_argument("--host", default=os.getenv("DB_HOST", "localhost"))
     p.add_argument("--port", type=int, default=int(os.getenv("DB_PORT", "5432")))
@@ -584,21 +625,44 @@ def main():
     args = parse_args()
 
     if args.download_s3:
+        docket_norm = _normalize_docket_id(args.download_s3)
+        if docket_norm != args.download_s3.strip():
+            log.info("Normalized docket id for S3: %s", docket_norm)
         download_docket_from_s3(
-            args.download_s3.strip(),
+            docket_norm,
             output_folder=args.output_folder,
             include_binary=args.include_binary,
             no_comments=args.s3_no_comments,
         )
-        docket_dir = Path(args.output_folder).resolve() / args.download_s3.strip()
+        docket_dir = Path(args.output_folder).resolve() / docket_norm
     elif args.docket_dir:
         docket_dir = Path(args.docket_dir).expanduser().resolve()
     else:
-        docket_dir = prompt_docket_dir()
+        raw = input("Enter docket ID (e.g. FAA-2025-0618): ").strip()
+        if not raw:
+            log.error("Docket ID cannot be empty.")
+            sys.exit(1)
+        docket_norm = _normalize_docket_id(raw)
+        if docket_norm != raw:
+            log.info("Normalized docket ID: %s", docket_norm)
+        docket_dir = Path(args.output_folder).resolve() / docket_norm
+        comments_dir = docket_dir / "raw-data" / "comments"
+        have_local = comments_dir.is_dir() and bool(list(comments_dir.glob("*.json")))
+        if args.download_only or not have_local:
+            if args.download_only:
+                log.info("Downloading from S3 (--download-only)…")
+            elif not have_local:
+                log.info("No comment JSON under %s — downloading from S3…", docket_dir)
+            download_docket_from_s3(
+                docket_norm,
+                output_folder=args.output_folder,
+                include_binary=args.include_binary,
+                no_comments=args.s3_no_comments,
+            )
 
     if args.download_only:
-        if not args.download_s3:
-            log.error("--download-only requires --download-s3.")
+        if args.docket_dir:
+            log.error("--download-only downloads from S3; omit --docket-dir.")
             sys.exit(1)
         log.info("Download complete (--download-only).")
         return
