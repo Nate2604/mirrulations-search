@@ -124,6 +124,46 @@ INSERT INTO dockets (
     'Japan Electrical Safety & Environmental Technology Laboratories - NRTL Application'
 );
 
+INSERT INTO dockets (
+    docket_id,
+    docket_api_link,
+    agency_id,
+    docket_category,
+    docket_type,
+    effective_date,
+    flex_field1,
+    flex_field2,
+    modify_date,
+    organization,
+    petition_nbr,
+    program,
+    rin,
+    short_title,
+    flex_subtype1,
+    flex_subtype2,
+    docket_title,
+    docket_abstract
+) VALUES (
+    'FAA-2025-0618',
+    'https://api.regulations.gov/v4/dockets/FAA-2025-0618',
+    'FAA',
+    'Pending',
+    'Rulemaking',
+    NULL,
+    NULL,
+    NULL,
+    '2026-03-12T13:10:41Z',
+    NULL,
+    NULL,
+    NULL,
+    '2120-AA64',
+    NULL,
+    'Airworthiness Directives',
+    NULL,
+    'AD-2024-00637-T; The Boeing Company 767-200 Series; 767-300 Series; 767-300F Series; 767-400ER Series airplanes; Inspection of lower underwing longeron fitting',
+    'Airworthiness Directives',
+);
+
 -- =========================================
 -- DOCUMENTS
 -- =========================================
