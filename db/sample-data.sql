@@ -210,7 +210,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0304-0001',
     'CMS-2025-0304',
@@ -253,6 +254,7 @@ INSERT INTO documents (
     'Medicare and Medicaid Programs; CY 2026 Payment Policies under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program (CMS-1832-P)',
     NULL,
     FALSE,
+    NULL,
     NULL
 );
 
@@ -298,7 +300,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0304-0009',
     'CMS-2025-0304',
@@ -363,7 +366,8 @@ INSERT INTO documents (
         'Intergovernmental Relations'
         ],
     FALSE,
-    NULL
+    NULL,
+    '2025-13271'
 );
 
 INSERT INTO documents (
@@ -408,7 +412,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0304-1544',
     'CMS-2025-0304',
@@ -451,7 +456,8 @@ INSERT INTO documents (
     'Medicare and Medicaid Programs: Calendar Year 2026 Payment Policies under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program; Correction',
     NULL,
     FALSE,
-    NULL
+    NULL,
+    '2025-15492'
 );
 
 INSERT INTO documents (
@@ -496,7 +502,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0304-14108',
     'CMS-2025-0304',
@@ -561,7 +568,8 @@ INSERT INTO documents (
         'Intergovernmental Relations'
         ],
     FALSE,
-    NULL
+    NULL,
+    '2025-19787'
 );
 
 INSERT INTO documents (
@@ -606,7 +614,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0304-14109',
     'CMS-2025-0304',
@@ -649,7 +658,8 @@ INSERT INTO documents (
     'Medicare and Medicaid Programs: Calendar Year 2026 Payment Policies Under the Physician Fee Schedule and Other Changes to Part B Payment and Coverage Policies; Medicare Shared Savings Program Requirements; and Medicare Prescription Drug Inflation Rebate Program; Correction',
     NULL,
     FALSE,
-    NULL
+    NULL,
+    '2025-21458'
 );
 
 INSERT INTO documents(
@@ -694,7 +704,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0240-0001',
     'CMS-2025-0240',
@@ -737,6 +748,7 @@ INSERT INTO documents(
     'CY 2026 Changes to the End-Stage Renal Disease (ESRD) Prospective Payment System and Quality Incentive Program. CMS1830-P Display',
     NULL,
     FALSE,
+    NULL,
     NULL
 );
 
@@ -782,7 +794,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0240-0002',
     'CMS-2025-0240',
@@ -825,7 +838,8 @@ INSERT INTO documents(
     'Medicare Program: End-Stage Renal Disease Prospective Payment System, Payment for Renal Dialysis Services Furnished to Individuals with Acute Kidney Injury, End-Stage Renal Disease Quality Incentive Program, and End-Stage Renal Disease Treatment Choices Model',
     ARRAY['Health Facilities','Medicare','Puerto Rico','Reporting and Recordkeeping Requirements','Administrative Practices and Procedures','Health Care','Health Insurance','Intergovernmental Relations','Penalties','Privacy'],
     FALSE,
-    NULL
+    NULL,
+    '2025-12368'
 );
 
 INSERT INTO documents(
@@ -870,7 +884,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'CMS-2025-0240-0214',
     'CMS-2025-0240',
@@ -913,7 +928,8 @@ INSERT INTO documents(
     'Medicare Program: End-Stage Renal Disease Prospective Payment System, Payment for Renal Dialysis Services Furnished to Individuals with Acute Kidney Injury, End-Stage Renal Disease Quality Incentive Program, and End-Stage Renal Disease Treatment Choices Model',
     ARRAY['Health Facilities','Medicare','Puerto Rico','Reporting and Recordkeeping Requirements','Administrative Practices and Procedures','Health Care','Health Insurance','Intergovernmental Relations','Penalties','Privacy'],
     FALSE,
-    NULL
+    NULL,
+    '2025-20681'
 );
 
 INSERT INTO documents(
@@ -958,7 +974,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'OSHA-2025-0005-0001',
     'OSHA-2025-0005',
@@ -1001,7 +1018,8 @@ INSERT INTO documents(
     'Japan Electrical Safety & Environment Technology Laboratories: Application for Recognition',
     NULL,
     FALSE,
-    NULL
+    NULL,
+    '2025-07127'
 );
 
 INSERT INTO documents (
@@ -1046,7 +1064,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'FAA-2025-0618-0001',
     'FAA-2025-0618',
@@ -1096,7 +1115,8 @@ INSERT INTO documents (
         "Safety"
     ],
     FALSE,
-    NULL
+    NULL,
+    '2025-06061'
 );
 
 INSERT INTO documents (
@@ -1141,7 +1161,8 @@ INSERT INTO documents (
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'FAA-2025-0618-0002',
     'FAA-2025-0618',
@@ -1184,6 +1205,7 @@ INSERT INTO documents (
     'U.S. DOT/FAA - Supplemental AD Documents',
     NULL,
     FALSE,
+    NULL,
     NULL
 );
 
@@ -1229,7 +1251,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'FAA-2025-0618-0009',
     'FAA-2025-0618',
@@ -1272,6 +1295,7 @@ INSERT INTO documents(
     'U.S. DOT/FAA - Supplemental AD Documents',
     NULL,
     FALSE,
+    NULL,
     NULL
 );
 
@@ -1317,7 +1341,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'FAA-2025-0618-0010',
     'FAA-2025-0618',
@@ -1360,6 +1385,7 @@ INSERT INTO documents(
     'U.S. DOT/FAA - Supplemental AD Documents',
     NULL,
     FALSE,
+    NULL,
     NULL
 );
 
@@ -1405,7 +1431,8 @@ INSERT INTO documents(
     document_title,
     topics,
     is_withdrawn,
-    postal_code
+    postal_code,
+    frdocnum
 ) VALUES (
     'FAA-2025-0618-0011',
     'FAA-2025-0618',
@@ -1448,7 +1475,8 @@ INSERT INTO documents(
     'Airworthiness Directives: The Boeing Company Airplanes',
     ARRAY['Air Transportation','Aircraft','Aviation Safety','Incorporation by Reference','Safety'],
     FALSE,
-    NULL
+    NULL,
+    '2026-04829'
 );
 
 -- =========================================
