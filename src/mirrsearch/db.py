@@ -42,9 +42,9 @@ class DBLayer:
             for _ in cfr_part_param
         )
         sql = f"""
-            SELECT DISTINCT unnest(frd.docket_ids)
+            SELECT DISTINCT doc.docket_id
             FROM cfrparts cp
-            JOIN federal_register_documents frd ON frd.document_number = cp.frdocnum
+            JOIN documents doc ON doc.frdocnum = cp.frdocnum
             WHERE ({clauses})
         """
         params = []
@@ -128,9 +128,9 @@ class DBLayer:
             for _ in cfr_part_param
         )
         sql = f"""
-            SELECT DISTINCT unnest(frd.docket_ids)
+            SELECT DISTINCT doc.docket_id
             FROM cfrparts cp
-            JOIN federal_register_documents frd ON frd.document_number = cp.frdocnum
+            JOIN documents doc ON doc.frdocnum = cp.frdocnum
             WHERE ({clauses})
         """
         params = []
