@@ -38,10 +38,15 @@ class DBLayer:
 
     def _get_cfr_docket_ids(self, cfr_part_param: List[Dict[str, str]]) -> set:
         clauses = " OR ".join(
-            "(cfr_title = %s AND cfr_part = %s)"
+            "(cp.title = %s AND cp.cfrpart = %s)"
             for _ in cfr_part_param
         )
-        sql = f"SELECT DISTINCT docket_id FROM federal_register_documents WHERE ({clauses})"
+        sql = f"""
+            SELECT DISTINCT unnest(frd.docket_ids)
+            FROM cfrparts cp
+            JOIN federal_register_documents frd ON frd.document_number = cp.frdocnum
+            WHERE ({clauses})
+        """
         params = []
         for c in cfr_part_param:
             params.append(str(c['title']))
