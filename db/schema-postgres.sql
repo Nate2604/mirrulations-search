@@ -145,7 +145,6 @@ CREATE TABLE IF NOT EXISTS cfrparts (
     frdocnum VARCHAR(50) NOT NULL,
     title VARCHAR(50) NOT NULL,
     cfrpart VARCHAR(50) NOT NULL,
-    citation_url VARCHAR(2000),
     PRIMARY KEY (frdocnum, title, cfrpart)
 );
 

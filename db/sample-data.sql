@@ -1078,7 +1078,6 @@ INSERT INTO documents (
     NULL,
     NULL,
     NULL,
-    NULL,
     '2025-05-28T03:59:59Z',
     '2025-04-10T04:00:00Z',
     NULL,
@@ -1107,13 +1106,7 @@ INSERT INTO documents (
     NULL,
     'Notice of Proposed Rulemaking (NPRM)',
     'Airworthiness Directives: The Boeing Company Airplanes',
-    [
-        "Air Transportation",
-        "Aircraft",
-        "Aviation Safety",
-        "Incorporation by Reference",
-        "Safety"
-    ],
+    ARRAY['Air Transportation', 'Aircraft', 'Aviation Safety', 'Incorporation by Reference', 'Safety'],
     FALSE,
     NULL,
     '2025-06061'
@@ -1597,481 +1590,291 @@ INSERT INTO links(
 -- CFR PARTS
 -- =========================================
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '405'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '410'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '414'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '424'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '425'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '427'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '428'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '495'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0001',
-    NULL,
-    42,
-    '512'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrpart
-) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '405'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '410'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '414'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '424'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '425'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '427'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-0009',
     '2025-13271',
     42,
     '428'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '405'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '410'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '414'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '424'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '425'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '427'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14108',
     '2025-19787',
     42,
     '428'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '405'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '410'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '414'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '424'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '425'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '427'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-14109',
     '2025-21458',
     42,
     '428'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-1544',
     '2025-15492',
     42,
     '405'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-1544',
     '2025-15492',
     42,
     '410'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-1544',
     '2025-15492',
     42,
     '414'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-1544',
     '2025-15492',
     42,
     '424'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0304-1544',
     '2025-15492',
     42,
     '425'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0240-0001',
     '2025-20681',
     42,
     '413'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrpart
 ) VALUES (
-    'CMS-2025-0240-0001',
     '2025-20681',
     42,
     '512'
 );
 
-INSERT INTO cfrParts(
-    document_id,
+INSERT INTO cfrparts(
     frDocNum,
     title,
     cfrPart
 ) VALUES (
-    'CMS-2025-0240-0214',
-    '2025-20681',
-    42,
-    '413'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrPart
-) VALUES (
-    'CMS-2025-0240-0214',
-    '2025-20681',
-    42,
-    '512'
-);
-
-INSERT INTO cfrParts(
-    document_id,
-    frDocNum,
-    title,
-    cfrPart
-) VALUES (
-    'FAA-2025-0618-0011',
     '2026-04829',
     14,
     '39'
@@ -2095,7 +1898,7 @@ INSERT INTO federal_register_documents (
     agency_names,
     topics,
     significant,
-    regulations_id_numbers,
+    regulation_id_numbers,
     html_url,
     pdf_url,
     json_url,
@@ -2139,7 +1942,7 @@ INSERT INTO federal_register_documents (
     agency_names,
     topics,
     significant,
-    regulations_id_numbers,
+    regulation_id_numbers,
     html_url,
     pdf_url,
     json_url,
@@ -2183,7 +1986,7 @@ INSERT INTO federal_register_documents (
     agency_names,
     topics,
     significant,
-    regulations_id_numbers,
+    regulation_id_numbers,
     html_url,
     pdf_url,
     json_url,
