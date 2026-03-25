@@ -85,79 +85,12 @@ class MockDBLayer:  # pylint: disable=too-few-public-methods
     def _opensearch_items(self) -> Dict[str, List[Dict[str, Any]]]:
         """Dummy OpenSearch data matching real production structure"""
         return {
-            "documents": [
-                # DEA-2024-0059 - 5 documents about marijuana rescheduling
+        "documents_text": [
+                # CMS-2025-0001 - 1 document with Federal Register text
                 {
-                    "agencyId": "DEA",
-                    "comment": None,
-                    "docketId": "DEA-2024-0059",
-                    "documentId": "DEA-2024-0059-0001",
-                    "documentType": "Proposed Rule",
-                    "modifyDate": "2024-12-21 02:00:50+00:00",
-                    "postedDate": "2024-05-21 04:00:00+00:00",
-                    "title": "Schedules of Controlled Substances: Rescheduling of Marijuana"
-                },
-                {
-                    "agencyId": "DEA",
-                    "comment": None,
-                    "docketId": "DEA-2024-0059",
-                    "documentId": "DEA-2024-0059-42928",
-                    "documentType": "Proposed Rule",
-                    "modifyDate": "2024-09-03 22:48:28+00:00",
-                    "postedDate": "2024-08-29 04:00:00+00:00",
-                    "title": "Schedules of Controlled Substances: Rescheduling of Marijuana"
-                },
-                # CMS-2025-0240 - 2 documents mentioning "medicare", 1 mention of "ESRD"
-                {
-                    "agencyId": "CMS",
-                    "comment": None,
-                    "docketId": "CMS-2025-0240",
-                    "documentId": "CMS-2025-0240-0214",
-                    "documentType": "Rule",
-                    "modifyDate": "2025-11-24 21:44:12+00:00",
-                    "postedDate": "2025-11-24 05:00:00+00:00",
-                    "title": "Medicare Program: End-Stage Renal Disease Prospective Payment System"
-                },
-                {
-                    "agencyId": "CMS",
-                    "comment": None,
-                    "docketId": "CMS-2025-0240",
-                    "documentId": "CMS-2025-0240-0002",
-                    "documentType": "Proposed Rule",
-                    "modifyDate": "2025-08-31 09:00:09+00:00",
-                    "postedDate": "2025-07-02 04:00:00+00:00",
-                    "title": "Medicare Program: End-Stage Renal Disease Prospective Payment System"
-                },
-                {
-                    "agencyId": "CMS",
-                    "comment": None,
-                    "docketId": "CMS-2025-0240",
-                    "documentId": "CMS-2025-0240-0001",
-                    "documentType": "Proposed Rule",
-                    "modifyDate": "2025-07-02 16:46:00+00:00",
-                    "postedDate": "2025-06-30 04:00:00+00:00",
-                    "title": "CY 2026 Changes to the End-Stage Renal Disease (ESRD) Prospective Payment System"
-                },
-                # CMS-2019-0100 - 2 documents about Home Health
-                {
-                    "agencyId": "CMS",
-                    "comment": None,
-                    "docketId": "CMS-2019-0100",
-                    "documentId": "CMS-2019-0100-0001",
-                    "documentType": "Proposed Rule",
-                    "modifyDate": "2019-08-28 01:06:05+00:00",
-                    "postedDate": "2019-07-11 04:00:00+00:00",
-                    "title": "CY 2020 Home Health Prospective Payment System Rate Update"
-                },
-                {
-                    "agencyId": "CMS",
-                    "comment": None,
-                    "docketId": "CMS-2019-0100",
-                    "documentId": "CMS-2019-0100-0559",
-                    "documentType": "Rule",
-                    "modifyDate": "2019-11-08 17:42:19+00:00",
-                    "postedDate": "2019-10-31 04:00:00+00:00",
-                    "title": "CY 2020 Home Health Prospective Payment System Rate Update"
+                    "docketId": "CMS-2025-0001",
+                    "documentId": "CMS-2025-0001-0001",
+                    "documentText": "[Federal Register Volume 90, Number 2 (Friday, January 3, 2025)] Centers for Medicare & Medicaid Services Agency Information Collection Activities: Proposed Collection. The Centers for Medicare & Medicaid Services (CMS) is announcing an opportunity for the public to comment on CMS' intention to collect information from the public. Under the Paperwork Reduction Act of 1995 (PRA), Federal agencies are required to publish notice in the Federal Register. Medicare Advantage Model of Care Submission Requirements. Request for Termination of Medicare Premium Part A, Part B, or Part B Immunosuppressive Drug Coverage (Part B-ID) and Supporting Statute and Regulations. The CMS-1763 is the form used by individuals who wish to terminate their Medicare Part A, Part B or Part B-ID. This 2024 iteration is a revision that does not propose any program changes."
                 },
             ],
             "comments": [
@@ -282,7 +215,7 @@ class MockDBLayer:  # pylint: disable=too-few-public-methods
     def text_match_terms(self, terms: List[str]) -> List[Dict[str, Any]]:  # pylint: disable=too-many-locals
         """
         Mock version that mirrors OpenSearch behavior:
-        - documents: searches title + comment
+        - documents_text: searches documentText
         - comments: searches commentText  
         - comments_extracted_text: searches extractedText (counts as comments)
         """
@@ -294,12 +227,11 @@ class MockDBLayer:  # pylint: disable=too-few-public-methods
                 return False
             return term.lower() in text.lower()
 
-        # Match documents (title OR comment)
+        # Match documents_text (documentText)
         matching_docs = [
-            doc for doc in data["documents"]
+            doc for doc in data["documents_text"]
             if any(
-                matches_phrase(doc.get("title", ""), term) or
-                matches_phrase(doc.get("comment", ""), term)
+                matches_phrase(doc.get("documentText", ""), term)
                 for term in terms
             )
         ]

@@ -297,21 +297,34 @@ class DBLayer:
             return resp["aggregations"]["by_docket"]["buckets"]
 
         docket_counts: Dict = {}
+
+        # Search documents_text index - documentText field
         doc_resp = opensearch_client.search(
-            index="documents", body=self._build_docket_agg_query(
+            index="documents_text",
+            body=self._build_docket_agg_query(
                 "matching_docs",
-                [{"multi_match": {"query": t, "fields": ["title", "comment"]}} for t in terms]
-            ))
+                [{"match_phrase": {"documentText": t}} for t in terms]
+            )
+        )
+
+        # Search comments index - commentText field
         comment_resp = opensearch_client.search(
-            index="comments", body=self._build_docket_agg_query(
+            index="comments",
+            body=self._build_docket_agg_query(
                 "matching_comments",
                 [{"match_phrase": {"commentText": t}} for t in terms]
-            ))
+            )
+        )
+
+        # Search comments_extracted_text index - extractedText field
         extracted_resp = opensearch_client.search(
-            index="comments_extracted_text", body=self._build_docket_agg_query(
+            index="comments_extracted_text",
+            body=self._build_docket_agg_query(
                 "matching_extracted",
                 [{"match_phrase": {"extractedText": t}} for t in terms]
-            ))
+            )
+        )
+
         self._accumulate_counts(
             docket_counts, buckets(doc_resp), "matching_docs", "document_match_count"
         )
@@ -321,6 +334,7 @@ class DBLayer:
         self._accumulate_counts(
             docket_counts, buckets(extracted_resp), "matching_extracted", "comment_match_count"
         )
+
         return [{"docket_id": did, **counts} for did, counts in docket_counts.items()]
 
     def get_agencies(self) -> List[str]:
