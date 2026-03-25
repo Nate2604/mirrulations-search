@@ -1776,7 +1776,7 @@ INSERT INTO documents(
     NULL,
     'Final Rule',
     'Airworthiness Directives: Airbus Helicopters',
-    ['Air Transportation', 'Aircraft', 'Aviation Safety', 'Incorporation by Reference', 'Safety'],
+    ARRAY['Air Transportation', 'Aircraft', 'Aviation Safety', 'Incorporation by Reference', 'Safety'],
     FALSE,
     NULL,
     '2026-04919'
