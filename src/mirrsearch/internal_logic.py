@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from typing import List
 
-from mirrsearch.db import cfr_part_filter_patterns, get_db
+from mirrsearch.db import cfr_part_filter_patterns, _cfr_exact_title_part_pairs, get_db
 
 
 def _correlation_score(row, support_k=10):
@@ -53,6 +53,16 @@ def _cfr_matches_filter(row, cfr_part_param):
     """Postgres: OR of cp.cfrPart ILIKE when CFR filter set."""
     if not cfr_part_param:
         return True
+    exact_pairs = _cfr_exact_title_part_pairs(cfr_part_param)
+    if exact_pairs:
+        cfr_refs = row.get("cfr_refs") or []
+        for title, part in exact_pairs:
+            for ref in cfr_refs:
+                if str(ref.get("title") or "").strip() == title:
+                    for part_key in (ref.get("cfrParts") or {}).keys():
+                        if str(part_key).strip() == part:
+                            return True
+        return False
     patterns = cfr_part_filter_patterns(cfr_part_param)
     return not patterns or _cfr_part_patterns_match_row(row, patterns)
 
