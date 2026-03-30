@@ -57,10 +57,11 @@ This ingests data from an existing local directory without downloading from S3.
 
 ```bash
 # 1. Setup empty DB
+./db/setup_postgres.sh 
 ./db/create_empty_db.sh
 
 # 2. Run ingest
-python db/ingest_docket.py --download-s3 FAA-2025-0618
+python db/ingest.py FAA-2025-0618 --user {your_username}
 
 # 3. Testing
 psql -d mirrulations -c "SELECT * FROM dockets LIMIT 10;"
