@@ -197,13 +197,3 @@ CREATE TABLE IF NOT EXISTS collections (
     collection_name VARCHAR(200) NOT NULL
 );
 
--- =========================================
--- COLLECTION DOCKETS TABLE
--- =========================================
--- Stores which dockets belong to which collection
-
-CREATE TABLE IF NOT EXISTS collection_dockets (
-    collection_id INT NOT NULL REFERENCES collections(collection_id) ON DELETE CASCADE,
-    docket_id VARCHAR(50) NOT NULL REFERENCES dockets(docket_id),
-    PRIMARY KEY (collection_id, docket_id)
-);
