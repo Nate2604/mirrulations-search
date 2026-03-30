@@ -12,31 +12,10 @@ The script fetches data from regulations.gov v4 API exports stored in S3 and loa
 
 ## Quick Start
 
-### 1. Interactive Mode (Simplest)
-
-Just run the script with no arguments. You'll be prompted to enter a docket ID:
+### 1. Download a Specific Docket
 
 ```bash
-python db/ingest_docket.py
-```
-
-Output:
-
-```
-Docket ingest — enter a regulations.gov docket ID.
-Docket ID: FAA-2025-0618
-```
-
-The script will:
-
-- Download the docket bundle from S3 to `./FAA-2025-0618/`
-- Ingest dockets, documents, and comments into PostgreSQL
-- Display a summary of what was loaded
-
-### 2. Download a Specific Docket
-
-```bash
-python db/ingest_docket.py --download-s3 FAA-2025-0618
+python db/ingest.py FAA-2025-0618
 ```
 
 This downloads the docket and all its data (documents, comments, derived data) from S3 to `./FAA-2025-0618/`, then ingests it.
@@ -44,10 +23,6 @@ This downloads the docket and all its data (documents, comments, derived data) f
 ### 3. Use Local Docket Directory
 
 If you already have docket data downloaded locally:
-
-```bash
-python db/ingest_docket.py --docket-dir ./path/to/docket-folder
-```
 
 This ingests data from an existing local directory without downloading from S3.
 
@@ -177,3 +152,7 @@ The script logs to stdout with timestamps and log levels:
 - [Database Schema](PostgresDB.md)
 - [Federal Register API](federal_register_api.md)
 - [OpensearchInfo](OpensearchInfo.md) for search integration
+
+```bash
+python db/ingest.py --docket-dir ./path/to/docket-folder
+```
