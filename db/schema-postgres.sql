@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- =========================================
 -- COLLECTIONS TABLE
 -- =========================================
--- Stores collections (folders) created by users
+-- Stores collections (folders) created by users.
 
 CREATE TABLE IF NOT EXISTS collections (
     collection_id SERIAL PRIMARY KEY,
