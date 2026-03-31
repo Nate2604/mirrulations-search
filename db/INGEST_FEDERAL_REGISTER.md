@@ -2,11 +2,35 @@
 
 ## Prerequisites
 
-`mirrulations-fetch` must be installed. From the repo root, run:
+### 1. Set up a virtual environment
+
+From the repo root, create and activate a virtual environment, then install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+This ensures the correct Python and SSL certificates are used. You only need to do this once.
+
+To activate the virtual environment in future sessions:
+
+```bash
+source .venv/bin/activate
+```
+
+### 2. Install mirrulations-fetch
+
+`mirrulations-fetch` is a local package — install it in editable mode from its repo:
 
 ```bash
 pip install -e /path/to/mirrulations-fetch
 ```
+
+This only needs to be done once per virtual environment.
+
+### 3. Set up the database
 
 Your Postgres database must be running and reachable. The script reads connection info from a `.env` file or the standard `DATABASE_URL` / `PG*` environment variables. See `ingest_federal_registry_document.py` for details.
 
@@ -18,7 +42,7 @@ psql $DATABASE_URL -f db/schema-postgres.sql
 
 ## Usage
 
-Run from the repo root:
+With the virtual environment active, run from the repo root:
 
 ```bash
 python3 db/ingest_fed_reg_docs_for_docket.py --docket-id OSHA-2025-0005

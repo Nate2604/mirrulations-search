@@ -16,12 +16,15 @@ Requires mirrulations-fetch to be installed:
 import argparse
 import json
 import shutil
+import ssl
 import subprocess
 import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Set
+
+import certifi
 
 FR_API_URL = "https://www.federalregister.gov/api/v1/documents/{}.json"
 
@@ -100,8 +103,9 @@ def collect_frdocnums(docket_dir: Path) -> Set[str]:
 
 def fetch_fr_document(frdocnum: str) -> dict:
     url = FR_API_URL.format(frdocnum)
+    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:
+        with urllib.request.urlopen(url, timeout=30, context=ssl_ctx) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         if e.code == 404:
