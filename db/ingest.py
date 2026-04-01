@@ -12,10 +12,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+import re
 import sys
 import subprocess
 from pathlib import Path
+from typing import Any
 
 try:
     from dotenv import load_dotenv
@@ -29,6 +32,7 @@ from ingest_docket import (
     _require_ingest_schema,
     _ensure_comments_document_fk,
 )
+
 import psycopg2
 
 logging.basicConfig(
@@ -119,6 +123,147 @@ def fetch_docket(docket_id: str, output_dir: str) -> Path:
         sys.exit(1)
 
 
+def document_content_html_paths(docket_dir: Path) -> list[tuple[str, Path]]:
+    """
+    Return (document_id, path) for each ``*_content.htm`` under ``raw-data/documents/``.
+
+    Pairs with regulations.gov JSON exports named like ``<document_id>.json`` (e.g.
+    ``FAA-2025-0618-0001_content.htm`` → document id ``FAA-2025-0618-0001``).
+    """
+    docs_dir = docket_dir / "raw-data" / "documents"
+    if not docs_dir.is_dir():
+        return []
+    out: list[tuple[str, Path]] = []
+    for path in sorted(docs_dir.glob("*_content.htm")):
+        doc_id = path.name.removesuffix("_content.htm")
+        if doc_id:
+            out.append((doc_id, path))
+    return out
+
+
+def read_document_content_html(docket_dir: Path) -> dict[str, str]:
+    """Read UTF-8 text from each ``*_content.htm`` file; map ``document_id`` → HTML body."""
+    result: dict[str, str] = {}
+    for doc_id, path in document_content_html_paths(docket_dir):
+        try:
+            result[doc_id] = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            log.warning("Could not read %s: %s", path, exc)
+    return result
+
+
+def extracted_txt_dir(docket_dir: Path) -> Path | None:
+    """
+    Resolve ``.../extracted_txt`` under ``derived-data`` if present.
+
+    Tries, in order:
+
+    - ``derived-data/mirrulations/extracted_txt`` (common local mirrulations-fetch layout)
+    - ``derived-data/<agency>/<docket_id>/extracted_txt`` (S3-style; agency = segment before
+      first ``-`` in the docket folder name)
+    - Any ``derived-data/**/extracted_txt`` directory (first match)
+    """
+    candidates: list[Path] = [
+        docket_dir / "derived-data" / "mirrulations" / "extracted_txt",
+    ]
+    did = docket_dir.name
+    if "-" in did:
+        agency = did.split("-", 1)[0]
+        candidates.append(docket_dir / "derived-data" / agency / did / "extracted_txt")
+    for p in candidates:
+        if p.is_dir():
+            return p
+    derived = docket_dir / "derived-data"
+    if derived.is_dir():
+        for p in sorted(derived.rglob("extracted_txt")):
+            if p.is_dir():
+                return p
+    return None
+
+
+def iter_extracted_txt_json_files(docket_dir: Path) -> list[Path]:
+    """Paths to ``*.json`` under the resolved ``extracted_txt`` tree (recursive)."""
+    root = extracted_txt_dir(docket_dir)
+    if not root:
+        return []
+    return sorted(p for p in root.rglob("*.json") if p.is_file())
+
+
+_EXTRACTED_PLAIN_NAME = re.compile(
+    r"^(?P<comment_id>.+)_attachment_(?P<attach>\d+)_extracted\.txt$",
+    re.IGNORECASE,
+)
+
+
+def iter_extracted_plain_txt_files(docket_dir: Path) -> list[Path]:
+    """
+    Paths to ``*_extracted.txt`` under ``extracted_txt`` (e.g.
+    ``.../extracted_txt/comments_extracted_text/pypdf/FAA-...-0007_attachment_1_extracted.txt``).
+    """
+    root = extracted_txt_dir(docket_dir)
+    if not root:
+        return []
+    return sorted(p for p in root.rglob("*_extracted.txt") if p.is_file())
+
+
+def read_derived_extracted_plain_text(docket_dir: Path) -> list[dict[str, Any]]:
+    """
+    Load plain-text extractions (PDF attachment text). Filenames must look like
+    ``<commentId>_attachment_<n>_extracted.txt``. ``extractedMethod`` is taken from the parent
+    directory name (e.g. ``pypdf``).
+    """
+    docket_id = docket_dir.name
+    out: list[dict[str, Any]] = []
+    for path in iter_extracted_plain_txt_files(docket_dir):
+        m = _EXTRACTED_PLAIN_NAME.match(path.name)
+        if not m:
+            log.warning(
+                "Skipping %s (expected <commentId>_attachment_<n>_extracted.txt)",
+                path,
+            )
+            continue
+        comment_id = m.group("comment_id")
+        attach_n = int(m.group("attach"))
+        method = path.parent.name
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            log.warning("Could not read %s: %s", path, exc)
+            continue
+        out.append(
+            {
+                "docketId": docket_id,
+                "commentId": comment_id,
+                "attachmentId": f"{comment_id}_attachment_{attach_n}",
+                "extractedMethod": method,
+                "extractedText": text,
+            }
+        )
+    return out
+
+
+def read_derived_extracted_text(docket_dir: Path) -> list[dict[str, Any]]:
+    """
+    Load extracted comment-attachment text from ``derived-data/.../extracted_txt``:
+
+    - ``*.json`` — one object or a JSON array per file
+    - ``*_extracted.txt`` — plain text (e.g. under ``comments_extracted_text/pypdf/``)
+    """
+    records: list[dict[str, Any]] = []
+    for path in iter_extracted_txt_json_files(docket_dir):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            log.warning("Could not read or parse %s: %s", path, exc)
+            continue
+        if isinstance(data, dict):
+            records.append(data)
+        elif isinstance(data, list):
+            records.extend(x for x in data if isinstance(x, dict))
+    records.extend(read_derived_extracted_plain_text(docket_dir))
+    return records
+
+
 def main():
     if load_dotenv:
         load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -136,6 +281,18 @@ def main():
             sys.exit(1)
 
     log.info("Using docket directory: %s", docket_dir)
+
+    html_by_doc = read_document_content_html(docket_dir)
+    if html_by_doc:
+        log.info(
+            "Read %d document HTML file(s): %s",
+            len(html_by_doc),
+            ", ".join(sorted(html_by_doc)),
+        )
+
+    extracted_records = read_derived_extracted_text(docket_dir)
+    if extracted_records:
+        log.info("Read %d derived extracted-text record(s)", len(extracted_records))
 
     # Dry run only (no DB connection needed)
     if args.dry_run:
@@ -196,20 +353,7 @@ def main():
             sys.exit(1)
     finally:
         conn.close()
-# get htm files will take any htm or html text reads text from the docket directory and return list of strings of what is in the htm files
-def get_htm_files(docket_dir: Path) -> list[str]:
-    """Get all .htm or .html files in the docket directory."""
-    list_htms = list(docket_dir.glob("**/*.htm")) + list(docket_dir.glob("**/*.html"))
-    htm_texts = []
-    for htm_file in list_htms:
-        try:
-            text = htm_file.read_text(encoding="utf-8", errors="ignore")
-            htm_texts.append(text)
-        except Exception as e:
-            log.warning("Could not read file %s: %s", htm_file, e)
-    return htm_texts
+
 
 if __name__ == "__main__":
-    output_text = get_htm_files(Path("/Users/bradenqkirk/Documents/classes/coleman/repos/mirrulations-search/FAA-2025-0618/raw-data/documents"))  # Test function
-    print(output_text)
-    # main()
+    main()
