@@ -17,10 +17,18 @@ import sys
 import subprocess
 from pathlib import Path
 
+# Allow `python db/ingest.py` from repo root without PYTHONPATH.
+_ROOT = Path(__file__).resolve().parent.parent
+_src = _ROOT / "src"
+if _src.is_dir() and str(_src) not in sys.path:
+    sys.path.insert(0, str(_src))
+
 try:
     from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
+
+from mirrsearch.db import get_opensearch_connection
 
 from ingest_docket import (
     ingest_docket_and_documents,
@@ -137,28 +145,36 @@ def main():
 
     log.info("Using docket directory: %s", docket_dir)
 
-    # Dry run only (no DB connection needed)
     if args.dry_run:
-        log.info("DRY RUN — no database writes.")
-        ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn=None, dry_run=True)
-        pc, cs = (0, 0)
-        if ok and not args.skip_comments_ingest:
-            pc, cs = ingest_comments(docket_dir, conn=None, dry_run=True)
-        if ok:
-            log.info("Done. Documents (this run): %d upserted, %d skipped", n_doc, sk)
-            if not args.skip_comments_ingest:
-                log.info("Comments (this run): %d processed, %d skipped", pc, cs)
-            _ingest_summary(
-                docket_dir,
-                fetched_docket_id,
-                None,
-                dry_run=True,
-                skip_comments_ingest=args.skip_comments_ingest,
-            )
-        else:
-            sys.exit(1)
-        return
+        ingest_into_postgresql_dry_run(docket_dir, args)
+    else:
+        ingest_into_postgresql(docket_dir, args)
+    ingest_htm_files(docket_dir, get_opensearch_connection())
 
+def ingest_into_postgresql_dry_run(docket_dir: Path, args: argparse.Namespace) -> None:
+    # Dry run only (no DB connection needed)
+    log.info("DRY RUN — no database writes.")
+    ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn=None, dry_run=True)
+    pc, cs = (0, 0)
+    if ok and not args.skip_comments_ingest:
+        pc, cs = ingest_comments(docket_dir, conn=None, dry_run=True)
+    if ok:
+        log.info("Done. Documents (this run): %d upserted, %d skipped", n_doc, sk)
+        if not args.skip_comments_ingest:
+            log.info("Comments (this run): %d processed, %d skipped", pc, cs)
+        _ingest_summary(
+            docket_dir,
+            fetched_docket_id,
+            None,
+            dry_run=True,
+            skip_comments_ingest=args.skip_comments_ingest,
+        )
+    else:
+        sys.exit(1)
+    return
+    
+
+def ingest_into_postgresql(docket_dir: Path, args: argparse.Namespace) -> None:
     # Connect to database and ingest
     log.info("Connecting to PostgreSQL at %s:%d/%s…", args.host, args.port, args.dbname)
     try:
@@ -196,28 +212,61 @@ def main():
             sys.exit(1)
     finally:
         conn.close()
-# get htm files will take any htm or html text reads text from the docket directory and 
-# return list of jsons of 
-# documentHtm - the text of the htm file
-# docketId - the docket id extracted from the directory name
-def get_htm_files(docket_dir: Path) -> list[str]:
+
+def get_htm_files(docket_dir: Path) -> list[dict[str, str]]:
     """Get all .htm or .html files in the docket directory."""
     list_htms = list(docket_dir.glob("raw-data/documents/**/*.htm")) + list(docket_dir.glob("raw-data/documents/**/*.html"))
     htm_texts = []
     for htm_file in list_htms:
         try:
             text = htm_file.read_text(encoding="utf-8", errors="ignore")
-            htm_texts.append(text)
+            document_id_from_htm = get_document_ID(htm_file)  # Assuming document ID is the parent directory name
+            htm_texts.append((text, document_id_from_htm))
         except Exception as e:
             log.warning("Could not read file %s: %s", htm_file, e)
     docket_id = get_docket_ID(docket_dir)
-    return [{"docketId": docket_id, "documentHtm": text} for text in htm_texts]
+    return [{"docketId": docket_id, "documentHtm": text, "documentId": document_id} for text, document_id in htm_texts]
 
 def get_docket_ID(docket_dir: Path) -> str:
     """Extract docket ID from the directory name."""
-    return docket_dir.name.strip().upper()
+    return docket_dir.name.strip()
+
+def get_document_ID(docket_dir: Path) -> str:
+    """Extract document ID from the directory name."""
+    return docket_dir.name.strip()
+
+def ingest_htm_files(htm_path: Path, client) -> None:
+    """Ingest HTM file data into OpenSearch documents index."""
+    documents_text = get_htm_files(htm_path)
+    
+    if not documents_text:
+        log.info("No HTM files found in %s", htm_path)
+        return
+    
+    log.info("Ingesting %d HTM document(s) into OpenSearch...", len(documents_text))
+    
+    try:
+        # Bulk ingest documents into the "documents" index
+        for idx, doc in enumerate(documents_text, 1):
+            doc_id = doc['documentId']
+            document = {
+                "docketId": doc["docketId"],
+                "documentId": doc["documentId"],
+                "documentText": doc["documentHtm"],
+            }
+            client.index(
+                index="documents",
+                id=doc_id,
+                body=document,
+            )
+            if idx % 10 == 0:
+                log.info("Ingested %d/%d documents", idx, len(documents_text))
+        
+        log.info("Successfully ingested %d HTM document(s) into OpenSearch", len(documents_text))
+    except Exception as e:
+        log.error("Failed to ingest HTM files into OpenSearch: %s", e)
+        raise
+
 
 if __name__ == "__main__":
-    output_text = get_htm_files(Path("/Users/bradenqkirk/Documents/classes/coleman/repos/mirrulations-search/FAA-2025-0618"))  # Test function
-    print(output_text)
-    # main()
+    main()
