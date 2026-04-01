@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, send_from_directory, redirect, make_r
 from mirrsearch.internal_logic import InternalLogic
 from mirrsearch.oauth_handler import OAuthHandler, OAuthCodeError, OAuthVerificationError
 from mirrsearch.oauth_handler import TokenExpiredError, TokenInvalidError
+from mirrsearch.db import get_db
 
 
 def _get_search_params():
@@ -245,7 +246,7 @@ def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: dis
     return flask_app
 
 
-app = create_app()
+app = create_app(db_layer=get_db())
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)
