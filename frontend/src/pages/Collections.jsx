@@ -4,8 +4,10 @@ import {
   createCollection,
   deleteCollection,
   removeDocketFromCollection,
+  getDocketsByIds,
 } from "../api/collectionsApi";
 import "../styles/collections.css";
+
 
 export default function Collections() {
   const [collections, setCollections] = useState([]);
@@ -17,6 +19,8 @@ export default function Collections() {
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState("");
   const [unauthorized, setUnauthorized] = useState(false);
+  const [docketDetails, setDocketDetails] = useState({});
+
 
   const loadCollections = async () => {
     setLoading(true);
@@ -51,6 +55,17 @@ export default function Collections() {
       setSelectedCollectionId(collections[0].collection_id);
     }
   }, [collections, selectedCollectionId]);
+
+  useEffect(() => {
+    if (!selectedDocketIds.length) return;
+    getDocketsByIds(selectedDocketIds).then(results => {
+        setDocketDetails(prev => {
+            const next = { ...prev };
+            results.forEach(d => { next[d.docket_id] = d; });
+            return next;
+        });
+    });
+  }, [selectedCollectionId]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -259,25 +274,42 @@ export default function Collections() {
               <p className="collections-muted">No dockets in this collection.</p>
             ) : (
               <div className="collection-results">
-                {selectedDocketIds.map((docketId) => (
-                  <article key={docketId} className="collection-result-card">
-                    <h3>{docketId}</h3>
-                    <p><strong>Agency:</strong> CMS</p>
-                    <p><strong>Docket-ID:</strong> {docketId}</p>
-                    <p><strong>Docket type:</strong> Rulemaking</p>
-                    {editMode && (
-                      <button
-                        type="button"
-                        className="collection-remove-docket"
-                        onClick={() =>
-                          handleRemoveDocket(selectedCollection.collection_id, docketId)
-                        }
-                      >
-                        Remove from Collection
-                      </button>
-                    )}
-                  </article>
-                ))}
+                {selectedDocketIds.map((docketId) => {
+                  const item = docketDetails[docketId];
+                  if (!item) return <div key={docketId} className="result-card"><p>Loading...</p></div>;
+                  return (
+                      <article key={docketId} className="result-card">
+                          <h3 className="result-title">{item.docket_title}</h3>
+                          <div className="result-meta">
+                              <p><strong>Agency:</strong> {item.agency_id}</p>
+                              <p><strong>Docket-ID:</strong> {item.docket_id}</p>
+                              <p><strong>Docket type:</strong> {item.docket_type}</p>
+                              <p>
+                                  <strong>CFR:</strong>{" "}
+                                  {item.cfrPart && item.cfrPart.length > 0 ? (
+                                      item.cfrPart.map((p, idx) => (
+                                          <span key={idx}>
+                                              <a href={p.link} target="_blank" rel="noopener noreferrer">
+                                                  {p.title != null ? `${p.title} Part ${p.part}` : p.part}
+                                              </a>
+                                              {idx < item.cfrPart.length - 1 && ", "}
+                                          </span>
+                                      ))
+                                  ) : (
+                                      <a href={ECFR_URL} target="_blank" rel="noopener noreferrer">None</a>
+                                  )}
+                              </p>
+                              <p><strong>Last modified date:</strong> {item.modify_date}</p>
+                          </div>
+                          {editMode && (
+                              <button className="collection-remove-docket"
+                                  onClick={() => handleRemoveDocket(selectedCollection.collection_id, docketId)}>
+                                  Remove from Collection
+                              </button>
+                          )}
+                      </article>
+                  );
+              })}
               </div>
             )}
           </>

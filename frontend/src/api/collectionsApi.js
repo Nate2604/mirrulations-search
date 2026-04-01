@@ -41,3 +41,12 @@ export async function removeDocketFromCollection(collectionId, docketId) {
     if (response.status === 401) throw new Error("UNAUTHORIZED");
     if (!response.ok) throw new Error(`Failed to remove docket from collection: ${response.status}`);
 }
+
+export async function getDocketsByIds(docketIds) {
+    const params = new URLSearchParams();
+    docketIds.forEach(id => params.append("docket_id", id));
+    const response = await fetch(`/dockets?${params.toString()}`);
+    if (response.status === 401) throw new Error("UNAUTHORIZED");
+    if (!response.ok) throw new Error(`Failed to fetch dockets: ${response.status}`);
+    return response.json();
+}
