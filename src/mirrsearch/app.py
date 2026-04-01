@@ -1,7 +1,8 @@
 """Flask application with pagination via HTTP headers"""
 import os
+from datetime import date, datetime
 from flask import Flask, request, jsonify, send_from_directory, redirect, make_response
-from mirrsearch.internal_logic import InternalLogic
+from mirrsearch.internal_logic import InternalLogic, _transform_cfr_refs
 from mirrsearch.oauth_handler import OAuthHandler, OAuthCodeError, OAuthVerificationError
 from mirrsearch.oauth_handler import TokenExpiredError, TokenInvalidError
 from mirrsearch.db import get_db
@@ -242,6 +243,21 @@ def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: dis
         if not removed:
             return jsonify({"error": "Collection not found"}), 404
         return "", 204
+
+    @flask_app.route("/dockets", methods=["GET"])
+    def get_dockets_by_ids():
+        handler = oauth_handler or _make_oauth_handler()
+        if not _get_user_from_cookie(handler):
+            return jsonify({"error": "Unauthorized"}), 401
+        docket_ids = [v for v in request.args.getlist("docket_id") if v]
+        if not docket_ids:
+            return jsonify([])
+        results = db_layer.get_dockets_by_ids(docket_ids)
+        for result in results:
+            if "modify_date" in result and isinstance(result["modify_date"], (date, datetime)):
+                result["modify_date"] = result["modify_date"].isoformat()
+            _transform_cfr_refs(result)
+        return jsonify(results)
 
     return flask_app
 

@@ -101,6 +101,16 @@ def _row_matches_advanced_filters(row, docket_type_param, agency, cfr_part_param
         and _cfr_matches_filter(row, cfr_part_param)
     )
 
+def _transform_cfr_refs(result):
+    """Convert raw cfr_refs into the cfrPart list format for API responses."""
+    cfr_refs = result.pop("cfr_refs", None)
+    if cfr_refs is not None:
+        result["cfrPart"] = [
+            {"title": ref.get("title"), "part": part, "link": link}
+            for ref in cfr_refs
+            for part, link in ref.get("cfrParts", {}).items()
+        ]
+
 
 class InternalLogic:  # pylint: disable=too-few-public-methods
     """Internal logic for search operations with pagination"""
@@ -210,13 +220,7 @@ class InternalLogic:  # pylint: disable=too-few-public-methods
         page_results = all_results[start_idx:end_idx]
         for result in page_results:
             _sanitize_search_row_for_json(result)
-            cfr_refs = result.pop("cfr_refs", None)
-            if cfr_refs is not None:
-                result["cfrPart"] = [
-                    {"title": ref.get("title"), "part": part, "link": link}
-                    for ref in cfr_refs
-                    for part, link in ref.get("cfrParts", {}).items()
-                ]
+            _transform_cfr_refs(result)
 
         # Rename internal keys to user-facing numerator/denominator names
         key_map = {
