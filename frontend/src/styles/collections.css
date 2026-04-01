@@ -225,137 +225,258 @@
   }
 
   .collections-page {
-    width: min(1100px, 100%);
+    width: min(1200px, calc(100% - 48px));
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
   }
 
-  .collections-header {
+  .collections-layout {
+    display: grid;
+    grid-template-columns: 390px 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .collections-sidebar {
+    background: #efeff1;
+    border-radius: 14px;
+    border: 1px solid #d9dce8;
+    overflow: hidden;
+  }
+
+  .collections-sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 1rem;
-    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+    background: #fff;
+    border-bottom: 1px solid #dfe2ee;
+  }
+
+  .collections-sidebar-header h2 {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .collections-sidebar-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  .collections-plus {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 14px;
+    background: #5a5fe6;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .collections-create-inline {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 12px 14px 0;
+  }
+
+  .collections-create-inline input {
+    border-radius: 10px;
+    border: 1px solid #d8dcee;
+  }
+
+  .collections-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 16px 20px;
+  }
+
+  .collections-nav-item {
+    border: 0;
+    border-radius: 22px;
+    padding: 22px 20px;
+    font-size: 52px;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, #7479e5, #5a5fe6);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .collections-nav-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(90, 95, 230, 0.25);
+  }
+
+  .collections-nav-item.is-active {
+    background: linear-gradient(135deg, #8489f0, #6d73ee);
+  }
+
+  .collections-content {
+    padding: 10px 8px 0 6px;
   }
 
   .collections-title {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 800;
-    color: #1f2430;
+    margin: 8px 0 16px;
+    text-align: center;
+    font-size: 78px;
+    font-weight: 500;
+    color: #202635;
   }
 
-  .collections-create-form {
+  .collections-toolbar {
     display: flex;
-    gap: 0.75rem;
     align-items: center;
-    width: min(520px, 100%);
-  }
-
-  .collections-create-form input {
-    flex: 1;
-    border-radius: 10px;
-    border: 1px solid #d8dcee;
-  }
-
-  .collections-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-
-  .collection-card {
-    background: #fff;
-    border: 1px solid #d8dcee;
-    border-radius: 14px;
-    padding: 1rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  }
-
-  .collection-card-top {
-    display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
+    gap: 14px;
+    margin-bottom: 12px;
   }
 
-  .collection-card-top h2 {
+  .collections-summary {
     margin: 0;
-    font-size: 1.05rem;
-    color: #1f2430;
+    font-size: 37px;
+    font-weight: 600;
+    color: #2f3648;
+  }
+
+  .collections-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .collections-action-btn {
+    height: 54px;
+    border-radius: 16px;
+    border: 2px solid #5a5fe6;
+    background: #5a5fe6;
+    color: #fff;
+    padding: 0 24px;
+    font-size: 32px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .collections-action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .collections-action-btn-secondary {
+    background: #5a5fe6;
   }
 
   .collection-delete {
+    height: 54px;
     border: 1px solid #f8ced3;
     background: #fff5f6;
     color: #c53030;
-    border-radius: 10px;
-    padding: 0.45rem 0.7rem;
-    font-size: 0.85rem;
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 26px;
     font-weight: 700;
     cursor: pointer;
   }
 
-  .collection-count {
-    margin: 0.5rem 0 0.75rem;
-    color: #4b5563;
-    font-size: 0.92rem;
-  }
-
-  .collection-docket-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .collection-results {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 14px;
   }
 
-  .collection-docket-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    background: #f6f7fb;
-    border-radius: 10px;
-    padding: 0.5rem 0.65rem;
+  .collection-result-card {
+    background: #fff;
+    border: 1px dashed #d8dcee;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
 
-  .collection-docket-item span {
-    font-size: 0.88rem;
-    color: #2f3648;
-    overflow-wrap: anywhere;
+  .collection-result-card h3 {
+    margin: 0 0 8px;
+    font-size: 37px;
+    color: #2a3142;
+  }
+
+  .collection-result-card p {
+    margin: 4px 0;
+    font-size: 27px;
+    color: #4a4f61;
   }
 
   .collection-remove-docket {
+    margin-top: 10px;
     border: none;
     background: #e2e8ff;
     color: #3340a7;
-    border-radius: 8px;
-    font-size: 0.78rem;
+    border-radius: 10px;
+    font-size: 22px;
     font-weight: 700;
-    padding: 0.35rem 0.55rem;
+    padding: 8px 12px;
     cursor: pointer;
-    flex-shrink: 0;
   }
 
   .collections-muted {
     margin: 0;
+    font-size: 26px;
     color: #6b7280;
   }
 
   .collections-error {
-    margin: 0;
+    margin: 0 0 8px;
     color: #b91c1c;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
   }
 
-  @media (max-width: 720px) {
-    .collections-create-form {
+  @media (max-width: 980px) {
+    .collections-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .collections-sidebar {
       width: 100%;
+    }
+
+    .collections-title {
+      font-size: 52px;
+    }
+
+    .collections-summary {
+      font-size: 20px;
+    }
+
+    .collections-toolbar {
       flex-direction: column;
-      align-items: stretch;
+      align-items: flex-start;
+    }
+
+    .collections-action-btn,
+    .collection-delete {
+      font-size: 18px;
+      height: 44px;
+    }
+
+    .collections-nav-item {
+      font-size: 34px;
+      padding: 18px 16px;
+    }
+
+    .collection-result-card h3 {
+      font-size: 28px;
+    }
+
+    .collection-result-card p,
+    .collections-muted,
+    .collections-error {
+      font-size: 16px;
     }
   }

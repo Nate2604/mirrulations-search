@@ -143,7 +143,7 @@ export default function App() {
                       className="btn btn-primary collections-nav-btn"
                     >
                       <BooksIcon size={24} weight="duotone" />
-                      {onCollectionsPage ? "Search" : "My Collections"}
+                      {onCollectionsPage ? "Back to Search" : "My Collections"}
                     </Link>
                     <a href="/logout" className="btn btn-primary">
                       Log Out
@@ -181,7 +181,7 @@ export default function App() {
                       className="btn btn-primary collections-nav-btn"
                     >
                       <BooksIcon size={24} weight="duotone" />
-                      {onCollectionsPage ? "Search" : "My Collections"}
+                      {onCollectionsPage ? "Back to Search" : "My Collections"}
                     </Link>
                     <a href="/logout" className="btn btn-primary">
                       Log Out
