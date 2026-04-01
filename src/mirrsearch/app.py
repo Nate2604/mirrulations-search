@@ -2,7 +2,7 @@
 import os
 from datetime import date, datetime
 from flask import Flask, request, jsonify, send_from_directory, redirect, make_response
-from mirrsearch.internal_logic import InternalLogic
+from mirrsearch.internal_logic import InternalLogic, _transform_cfr_refs
 from mirrsearch.oauth_handler import OAuthHandler, OAuthCodeError, OAuthVerificationError
 from mirrsearch.oauth_handler import TokenExpiredError, TokenInvalidError
 from mirrsearch.db import get_db
@@ -256,13 +256,7 @@ def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: dis
         for result in results:
             if "modify_date" in result and isinstance(result["modify_date"], (date, datetime)):
                 result["modify_date"] = result["modify_date"].isoformat()
-            cfr_refs = result.pop("cfr_refs", None)
-            if cfr_refs is not None:
-                result["cfrPart"] = [
-                    {"title": ref.get("title"), "part": part, "link": link}
-                    for ref in cfr_refs
-                    for part, link in ref.get("cfrParts", {}).items()
-                ]
+            _transform_cfr_refs(result)
         return jsonify(results)
 
     return flask_app
