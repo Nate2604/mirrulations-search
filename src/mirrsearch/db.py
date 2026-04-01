@@ -97,7 +97,7 @@ def _opensearch_comment_id_terms_size() -> int:
 class DBLayer:
     conn: Any = None
 
-    def search(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def search( # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-branches,too-many-statements
             self,
             query: str,
             docket_type_param: str = None,
