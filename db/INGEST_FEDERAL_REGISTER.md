@@ -36,6 +36,18 @@ Your Postgres database must be running and reachable. The script reads connectio
 
 The `federal_register_documents` and `cfrparts` tables must exist. Run the schema if you haven't already:
 
+Check if @DATABASE_URL is set: 
+```bash
+echo $DATABASE_URL
+```
+
+If emptry, set the @DATABASE_URL environment variable:
+
+```bash
+export DATABASE_URL=postgresql://localhost/mirrulations
+```
+
+Then run:
 ```bash
 psql $DATABASE_URL -f db/schema-postgres.sql
 ```
