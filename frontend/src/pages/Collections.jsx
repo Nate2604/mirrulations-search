@@ -7,7 +7,21 @@ import {
   getDocketsByIds,
 } from "../api/collectionsApi";
 import "../styles/collections.css";
+
+/** Must match ResultsPanel — overlay search result doc/comment counts onto /dockets rows. */
+const DOCKET_METRICS_SESSION_KEY = "mirrulations_docket_metrics_v1";
+
+function readRememberedMetrics() {
+  try {
+    const raw = sessionStorage.getItem(DOCKET_METRICS_SESSION_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 const ECFR_URL = "https://www.ecfr.gov";
+const EMPTY_DOCKET_IDS = [];
 
 export default function Collections() {
   const [collections, setCollections] = useState([]);
@@ -21,11 +35,19 @@ export default function Collections() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [docketDetails, setDocketDetails] = useState({});
   /**
-   * modified_desc / modified_asc = by last modified date
-   * title_asc / title_desc = A–Z / Z–A by docket_title
+   * modified_desc / modified_asc — last modified
+   * title_asc / title_desc — title A–Z / Z–A
+   * documents_desc / documents_asc — by documentDenominator (total documents)
+   * comments_desc / comments_asc — by commentDenominator (total comments)
+   * Counts use documentNumerator/Denominator & commentNumerator/Denominator like ResultsPanel,
+   * merged from search in this browser when those dockets were on a results page.
    */
   const [docketSortOrder, setDocketSortOrder] = useState("modified_desc");
 
+  const selectedCollection = collections.find(
+    (c) => c.collection_id === selectedCollectionId
+  );
+  const selectedDocketIds = selectedCollection?.docket_ids ?? EMPTY_DOCKET_IDS;
 
   const loadCollections = async () => {
     setLoading(true);
@@ -63,14 +85,25 @@ export default function Collections() {
 
   useEffect(() => {
     if (!selectedDocketIds.length) return;
-    getDocketsByIds(selectedDocketIds).then(results => {
-        setDocketDetails(prev => {
-            const next = { ...prev };
-            results.forEach(d => { next[d.docket_id] = d; });
-            return next;
+    getDocketsByIds(selectedDocketIds).then((results) => {
+      const stored = readRememberedMetrics();
+      setDocketDetails((prev) => {
+        const next = { ...prev };
+        results.forEach((d) => {
+          const id = d.docket_id;
+          const m = stored[id];
+          next[id] = {
+            ...d,
+            documentNumerator: m?.documentNumerator ?? d.documentNumerator ?? 0,
+            documentDenominator: m?.documentDenominator ?? d.documentDenominator ?? 0,
+            commentNumerator: m?.commentNumerator ?? d.commentNumerator ?? 0,
+            commentDenominator: m?.commentDenominator ?? d.commentDenominator ?? 0,
+          };
         });
+        return next;
+      });
     });
-  }, [selectedCollectionId]);
+  }, [selectedCollectionId, selectedDocketIds]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -144,13 +177,9 @@ export default function Collections() {
     }
   };
 
-  const selectedCollection = collections.find(
-    (collection) => collection.collection_id === selectedCollectionId
-  );
-  const selectedDocketIds = selectedCollection?.docket_ids || [];
-
   const sortedDocketIds = useMemo(() => {
     const ids = [...selectedDocketIds];
+    const row = (id) => docketDetails[id] ?? {};
     const getTime = (docketId) => {
       const raw = docketDetails[docketId]?.modify_date;
       if (raw == null || raw === "") return null;
@@ -161,7 +190,23 @@ export default function Collections() {
       const t = docketDetails[docketId]?.docket_title;
       return (t != null ? String(t) : "").trim();
     };
+    const docTotal = (id) => Number(row(id).documentDenominator ?? 0);
+    const comTotal = (id) => Number(row(id).commentDenominator ?? 0);
     ids.sort((a, b) => {
+      if (docketSortOrder === "documents_desc" || docketSortOrder === "documents_asc") {
+        const cmp = docTotal(b) - docTotal(a);
+        if (cmp !== 0) {
+          return docketSortOrder === "documents_desc" ? cmp : -cmp;
+        }
+        return String(a).localeCompare(String(b));
+      }
+      if (docketSortOrder === "comments_desc" || docketSortOrder === "comments_asc") {
+        const cmp = comTotal(b) - comTotal(a);
+        if (cmp !== 0) {
+          return docketSortOrder === "comments_desc" ? cmp : -cmp;
+        }
+        return String(a).localeCompare(String(b));
+      }
       if (docketSortOrder === "title_asc" || docketSortOrder === "title_desc") {
         const ta = getTitle(a);
         const tb = getTitle(b);
@@ -272,10 +317,64 @@ export default function Collections() {
           <div className="collections-sort-sidebar-header">
             <h2 className="collections-sort-sidebar-heading">Sort dockets</h2>
             <p className="collections-sort-sidebar-lede">
-              Applies to the collection you have open. Titles sort A–Z or Z–A when loaded.
+              Document/comment totals match search when you have opened those dockets on results (this browser).
             </p>
           </div>
           <div className="collections-sort-sidebar-body">
+            <div className="collections-sort-section">
+              <h3 className="collections-sort-section-label">Documents</h3>
+              <p className="collections-sort-section-desc">By documentDenominator (total)</p>
+              <div
+                className="collections-sort-toggle"
+                role="group"
+                aria-label="Sort by document total"
+              >
+                <button
+                  type="button"
+                  className={`collections-sort-btn ${docketSortOrder === "documents_desc" ? "is-selected" : ""}`}
+                  onClick={() => setDocketSortOrder("documents_desc")}
+                >
+                  <span className="collections-sort-btn-label">High → low</span>
+                  <span className="collections-sort-btn-hint">Most documents first</span>
+                </button>
+                <button
+                  type="button"
+                  className={`collections-sort-btn ${docketSortOrder === "documents_asc" ? "is-selected" : ""}`}
+                  onClick={() => setDocketSortOrder("documents_asc")}
+                >
+                  <span className="collections-sort-btn-label">Low → high</span>
+                  <span className="collections-sort-btn-hint">Fewest documents first</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="collections-sort-section">
+              <h3 className="collections-sort-section-label">Comments</h3>
+              <p className="collections-sort-section-desc">By commentDenominator (total)</p>
+              <div
+                className="collections-sort-toggle"
+                role="group"
+                aria-label="Sort by comment total"
+              >
+                <button
+                  type="button"
+                  className={`collections-sort-btn ${docketSortOrder === "comments_desc" ? "is-selected" : ""}`}
+                  onClick={() => setDocketSortOrder("comments_desc")}
+                >
+                  <span className="collections-sort-btn-label">High → low</span>
+                  <span className="collections-sort-btn-hint">Most comments first</span>
+                </button>
+                <button
+                  type="button"
+                  className={`collections-sort-btn ${docketSortOrder === "comments_asc" ? "is-selected" : ""}`}
+                  onClick={() => setDocketSortOrder("comments_asc")}
+                >
+                  <span className="collections-sort-btn-label">Low → high</span>
+                  <span className="collections-sort-btn-hint">Fewest comments first</span>
+                </button>
+              </div>
+            </div>
+
             <div className="collections-sort-section">
               <h3 className="collections-sort-section-label">Modified date</h3>
               <div
@@ -403,6 +502,14 @@ export default function Collections() {
                                   )}
                               </p>
                               <p><strong>Last modified date:</strong> {item.modify_date}</p>
+                              <p>
+                                <strong>Documents:</strong> {item.documentNumerator ?? 0}/
+                                {item.documentDenominator ?? 0}
+                              </p>
+                              <p>
+                                <strong>Comments:</strong> {item.commentNumerator ?? 0}/
+                                {item.commentDenominator ?? 0}
+                              </p>
                           </div>
                           {editMode && (
                               <button className="collection-remove-docket"
