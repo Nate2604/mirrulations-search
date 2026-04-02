@@ -231,9 +231,18 @@
 
   .collections-layout {
     display: grid;
-    grid-template-columns: 390px 1fr;
+    grid-template-columns: minmax(260px, 390px) minmax(0, 1fr);
+    grid-template-areas: "rail main";
     gap: 22px;
     align-items: start;
+  }
+
+  .collections-rail {
+    grid-area: rail;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
   }
 
   .collections-sidebar {
@@ -241,6 +250,114 @@
     border-radius: 14px;
     border: 1px solid #d9dce8;
     overflow: hidden;
+    box-shadow: 0 4px 24px rgba(25, 30, 60, 0.06);
+  }
+
+  .collections-sort-sidebar {
+    background: #efeff1;
+    border-radius: 14px;
+    border: 1px solid #d9dce8;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(25, 30, 60, 0.06);
+  }
+
+  .collections-sort-sidebar-header {
+    padding: 14px;
+    background: #fff;
+    border-bottom: 1px solid #dfe2ee;
+  }
+
+  .collections-sort-sidebar-heading {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #202635;
+    letter-spacing: -0.02em;
+  }
+
+  .collections-sort-sidebar-lede {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    line-height: 1.35;
+  }
+
+  .collections-sort-sidebar-body {
+    padding: 16px 14px 18px;
+    background: linear-gradient(180deg, #f8f9fc 0%, #eef0f7 100%);
+  }
+
+  .collections-sort-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #e8eaf5 0%, #dfe3f2 100%);
+    border: 1px solid rgba(90, 95, 230, 0.18);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 4px 14px rgba(45, 52, 110, 0.08);
+  }
+
+  .collections-sort-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    background: rgba(255, 255, 255, 0.55);
+    color: #3d4466;
+    box-shadow: 0 1px 2px rgba(30, 35, 70, 0.04);
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .collections-sort-btn:hover:not(.is-selected) {
+    background: rgba(255, 255, 255, 0.92);
+    color: #2a3148;
+    box-shadow: 0 3px 10px rgba(90, 95, 230, 0.12);
+  }
+
+  .collections-sort-btn.is-selected {
+    background: linear-gradient(135deg, #7b80ea 0%, #5a5fe6 50%, #5257e0 100%);
+    color: #fff;
+    box-shadow:
+      0 4px 16px rgba(90, 95, 230, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+  }
+
+  .collections-sort-btn-label {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .collections-sort-btn-hint {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.88;
+    line-height: 1.25;
+  }
+
+  .collections-sort-btn.is-selected .collections-sort-btn-hint {
+    opacity: 0.92;
+  }
+
+  .collections-sort-btn:not(.is-selected) .collections-sort-btn-hint {
+    color: #7b8199;
   }
 
   .collections-sidebar-header {
@@ -321,7 +438,9 @@
   }
 
   .collections-content {
+    grid-area: main;
     padding: 10px 8px 0 6px;
+    min-width: 0;
   }
 
   .collections-title {
@@ -440,10 +559,23 @@
   @media (max-width: 980px) {
     .collections-layout {
       grid-template-columns: 1fr;
+      grid-template-areas:
+        "rail"
+        "main";
     }
 
-    .collections-sidebar {
+    .collections-rail {
       width: 100%;
+    }
+
+    .collections-sort-toggle {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .collections-sort-btn {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 140px;
     }
 
     .collections-title {

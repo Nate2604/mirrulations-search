@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   getCollections,
   createCollection,
@@ -20,6 +20,8 @@ export default function Collections() {
   const [error, setError] = useState("");
   const [unauthorized, setUnauthorized] = useState(false);
   const [docketDetails, setDocketDetails] = useState({});
+  /** "modified_desc" = newest first; "modified_asc" = oldest first */
+  const [docketSortOrder, setDocketSortOrder] = useState("modified_desc");
 
 
   const loadCollections = async () => {
@@ -139,6 +141,31 @@ export default function Collections() {
     }
   };
 
+  const selectedCollection = collections.find(
+    (collection) => collection.collection_id === selectedCollectionId
+  );
+  const selectedDocketIds = selectedCollection?.docket_ids || [];
+
+  const sortedDocketIds = useMemo(() => {
+    const ids = [...selectedDocketIds];
+    const getTime = (docketId) => {
+      const raw = docketDetails[docketId]?.modify_date;
+      if (raw == null || raw === "") return null;
+      const t = Date.parse(String(raw));
+      return Number.isNaN(t) ? null : t;
+    };
+    ids.sort((a, b) => {
+      const ta = getTime(a);
+      const tb = getTime(b);
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      const cmp = ta - tb;
+      return docketSortOrder === "modified_desc" ? -cmp : cmp;
+    });
+    return ids;
+  }, [selectedDocketIds, docketDetails, docketSortOrder]);
+
   if (unauthorized) {
     return (
       <section className="collections-page">
@@ -148,17 +175,12 @@ export default function Collections() {
     );
   }
 
-  const selectedCollection = collections.find(
-    (collection) => collection.collection_id === selectedCollectionId
-  );
-  const selectedDocketIds = selectedCollection?.docket_ids || [];
-
   const handleDownloadAll = () => {
     if (!selectedCollection) return;
     const lines = [
       `Collection: ${selectedCollection.name}`,
       "",
-      ...selectedDocketIds.map((docketId) => docketId),
+      ...sortedDocketIds.map((docketId) => docketId),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -171,7 +193,8 @@ export default function Collections() {
 
   return (
     <section className="collections-page collections-layout">
-      <aside className="collections-sidebar">
+      <div className="collections-rail">
+        <aside className="collections-sidebar">
         <div className="collections-sidebar-header">
           <div>
             <h2>My Collections</h2>
@@ -227,7 +250,39 @@ export default function Collections() {
             ))}
           </div>
         )}
-      </aside>
+        </aside>
+
+        <aside className="collections-sort-sidebar" aria-label="Sort dockets">
+          <div className="collections-sort-sidebar-header">
+            <h2 className="collections-sort-sidebar-heading">Sort dockets</h2>
+            <p className="collections-sort-sidebar-lede">For whichever collection is open • by modified date</p>
+          </div>
+          <div className="collections-sort-sidebar-body">
+            <div
+              className="collections-sort-toggle"
+              role="group"
+              aria-label="Sort dockets by modified date"
+            >
+              <button
+                type="button"
+                className={`collections-sort-btn ${docketSortOrder === "modified_desc" ? "is-selected" : ""}`}
+                onClick={() => setDocketSortOrder("modified_desc")}
+              >
+                <span className="collections-sort-btn-label">Newest first</span>
+                <span className="collections-sort-btn-hint">Latest changes</span>
+              </button>
+              <button
+                type="button"
+                className={`collections-sort-btn ${docketSortOrder === "modified_asc" ? "is-selected" : ""}`}
+                onClick={() => setDocketSortOrder("modified_asc")}
+              >
+                <span className="collections-sort-btn-label">Oldest first</span>
+                <span className="collections-sort-btn-hint">Earliest changes</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <div className="collections-content">
         {error && <p className="collections-error">{error}</p>}
@@ -274,7 +329,7 @@ export default function Collections() {
               <p className="collections-muted">No dockets in this collection.</p>
             ) : (
               <div className="collection-results">
-                {selectedDocketIds.map((docketId) => {
+                {sortedDocketIds.map((docketId) => {
                   const item = docketDetails[docketId];
                   if (!item) return <div key={docketId} className="result-card"><p>Loading...</p></div>;
                   return (
