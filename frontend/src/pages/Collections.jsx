@@ -6,8 +6,11 @@ import {
   removeDocketFromCollection,
   getCollectionDockets,
 } from "../api/collectionsApi";
+import DownloadModal from "./DownloadModal";
 import "../styles/collections.css";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+const ECFR_URL = "https://www.ecfr.gov";
+const MAX_DOCKETS = 10;
 
 export default function Collections() {
   const [collections, setCollections] = useState([]);
@@ -23,8 +26,7 @@ export default function Collections() {
   const [pagination, setPagination] = useState(null);
   const [page, setPage] = useState(1);
   const [docketsLoading, setDocketsLoading] = useState(false);
-  const ECFR_URL = "https://www.ecfr.gov";
-
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   const loadCollections = async () => {
     setLoading(true);
@@ -99,10 +101,7 @@ export default function Collections() {
         name: trimmedName,
         docket_ids: [],
       };
-      setCollections((prev) => [
-        ...prev,
-        newCollection,
-      ]);
+      setCollections((prev) => [...prev, newCollection]);
       setSelectedCollectionId(created.collection_id);
       setShowCreateForm(false);
       setNewCollectionName("");
@@ -162,21 +161,11 @@ export default function Collections() {
     (collection) => collection.collection_id === selectedCollectionId
   );
   const selectedDocketIds = selectedCollection?.docket_ids || [];
+  const overLimit = selectedDocketIds.length > MAX_DOCKETS;
 
   const handleDownloadAll = () => {
-    if (!selectedCollection) return;
-    const lines = [
-      `Collection: ${selectedCollection.name}`,
-      "",
-      ...selectedDocketIds.map((docketId) => docketId),
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${selectedCollection.name.replace(/\s+/g, "-").toLowerCase()}-dockets.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (!selectedCollection || overLimit) return;
+    setShowDownloadModal(true);
   };
 
   return (
@@ -250,7 +239,12 @@ export default function Collections() {
             <div className="collections-toolbar">
               <p className="collections-summary">
                 Showing dockets in "{selectedCollection.name}" • {pagination?.totalResults ?? 0}{" "}
-                docket{(pagination?.totalResults ?? 0) === 1 ? "" : "s"}
+                docket{(pagination?.totalResults ?? 0) === 1 ? "" : "s"} found
+                {overLimit && (
+                  <span style={{ color: "#c0392b", marginLeft: 8, fontWeight: 600 }}>
+                    · Limit of {MAX_DOCKETS} reached — remove dockets to download
+                  </span>
+                )}
               </p>
               <div className="collections-actions">
                 <button
@@ -264,7 +258,8 @@ export default function Collections() {
                   type="button"
                   className="collections-action-btn"
                   onClick={handleDownloadAll}
-                  disabled={!pagination?.totalResults}
+                  disabled={!pagination?.totalResults || overLimit}
+                  title={overLimit ? `Collections are limited to ${MAX_DOCKETS} dockets for download` : ""}
                 >
                   Download All
                 </button>
@@ -338,6 +333,14 @@ export default function Collections() {
           </>
         )}
       </div>
+
+      {showDownloadModal && (
+        <DownloadModal
+          collectionName={selectedCollection?.name}
+          docketIds={selectedDocketIds}
+          onClose={() => setShowDownloadModal(false)}
+        />
+      )}
     </section>
   );
 }
