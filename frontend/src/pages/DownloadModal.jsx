@@ -30,9 +30,8 @@ const PACKAGE_OPTIONS = [
 ];
 
 const FORMAT_OPTIONS = [
-  { id: "json", label: "JSON" },
+  { id: "Raw", label: "RAW" },
   { id: "csv", label: "CSV" },
-  { id: "zip", label: "ZIP archive" },
 ];
 
 export default function DownloadModal({ collectionName, docketIds, onClose }) {
