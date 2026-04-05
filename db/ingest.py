@@ -20,10 +20,18 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+# Allow `python db/ingest.py` from repo root without PYTHONPATH.
+_ROOT = Path(__file__).resolve().parent.parent
+_src = _ROOT / "src"
+if _src.is_dir() and str(_src) not in sys.path:
+    sys.path.insert(0, str(_src))
+
 try:
     from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
+
+from mirrsearch.db import get_opensearch_connection
 
 from ingest_docket import (
     ingest_docket_and_documents,
@@ -294,28 +302,44 @@ def main():
     if extracted_records:
         log.info("Read %d derived extracted-text record(s)", len(extracted_records))
 
+    if args.dry_run:
+        ingest_into_postgresql_dry_run(docket_dir, args)
+    else:
+        ingest_into_postgresql(docket_dir, args)
+    ingest_htm_files(docket_dir, get_opensearch_connection())
+
+def ingest_into_postgresql_dry_run(docket_dir: Path, args: argparse.Namespace) -> None:
     # Dry run only (no DB connection needed)
     if args.dry_run:
-        log.info("DRY RUN — no database writes.")
-        ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn=None, dry_run=True)
-        pc, cs = (0, 0)
-        if ok and not args.skip_comments_ingest:
-            pc, cs = ingest_comments(docket_dir, conn=None, dry_run=True)
-        if ok:
-            log.info("Done. Documents (this run): %d upserted, %d skipped", n_doc, sk)
-            if not args.skip_comments_ingest:
-                log.info("Comments (this run): %d processed, %d skipped", pc, cs)
-            _ingest_summary(
-                docket_dir,
-                fetched_docket_id,
-                None,
-                dry_run=True,
-                skip_comments_ingest=args.skip_comments_ingest,
-            )
-        else:
-            sys.exit(1)
-        return
+        ingest_into_postgresql_dry_run(docket_dir, args)
+    else:
+        ingest_into_postgresql(docket_dir, args)
+    ingest_htm_files(docket_dir, get_opensearch_connection())
 
+def ingest_into_postgresql_dry_run(docket_dir: Path, args: argparse.Namespace) -> None:
+    # Dry run only (no DB connection needed)
+    log.info("DRY RUN — no database writes.")
+    ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn=None, dry_run=True)
+    pc, cs = (0, 0)
+    if ok and not args.skip_comments_ingest:
+        pc, cs = ingest_comments(docket_dir, conn=None, dry_run=True)
+    if ok:
+        log.info("Done. Documents (this run): %d upserted, %d skipped", n_doc, sk)
+        if not args.skip_comments_ingest:
+            log.info("Comments (this run): %d processed, %d skipped", pc, cs)
+        _ingest_summary(
+            docket_dir,
+            fetched_docket_id,
+            None,
+            dry_run=True,
+            skip_comments_ingest=args.skip_comments_ingest,
+        )
+    else:
+        sys.exit(1)
+    return
+    
+
+def ingest_into_postgresql(docket_dir: Path, args: argparse.Namespace) -> None:
     # Connect to database and ingest
     log.info("Connecting to PostgreSQL at %s:%d/%s…", args.host, args.port, args.dbname)
     try:
