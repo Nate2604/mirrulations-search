@@ -5,7 +5,9 @@ Fetch docket data using mirrulations-fetch and ingest it into PostgreSQL.
 This script combines mirrulations-fetch (to download docket data) with the
 ingest_docket module to load data into the database. Optionally ingests full
 Federal Register documents (API → federal_register_documents / cfrparts) using
-``frDocNum`` values from regulations.gov document JSON.
+``frDocNum`` values from regulations.gov document JSON. Derived PDF attachment
+text under ``derived-data/.../extracted_txt`` is indexed into OpenSearch
+``comments_extracted_text`` (not the ``documents`` index).
 
 Usage:
     python db/ingest.py FAA-2025-0618
@@ -69,6 +71,35 @@ log = logging.getLogger(__name__)
 FR_API_URL = "https://www.federalregister.gov/api/v1/documents/{}.json"
 
 _REQUIRED_FR_TABLES = frozenset({"federal_register_documents", "cfrparts"})
+
+OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX = "comments_extracted_text"
+
+COMMENTS_EXTRACTED_TEXT_INDEX_BODY: dict[str, Any] = {
+    "mappings": {
+        "properties": {
+            "attachmentId": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "commentId": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "docketId": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "extractedMethod": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "extractedText": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+        }
+    }
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -208,6 +239,62 @@ def ingest_htm_files(docket_dir: Path, client: Any) -> None:
                 "documentText": item["documentHtm"],
             },
         )
+
+
+def ensure_comments_extracted_text_index(client: Any) -> None:
+    """Create the OpenSearch ``comments_extracted_text`` index if it does not exist."""
+    if client.indices.exists(index=OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX):
+        return
+    client.indices.create(
+        index=OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX,
+        body=COMMENTS_EXTRACTED_TEXT_INDEX_BODY,
+    )
+
+
+def _normalized_comments_extracted_text_body(rec: dict[str, Any]) -> dict[str, Any] | None:
+    """Map a record from ``read_derived_extracted_text`` to the index document shape."""
+    text = rec.get("extractedText") or rec.get("extracted_text")
+    if not isinstance(text, str) or not text.strip():
+        return None
+    docket_id = rec.get("docketId") or rec.get("docket_id")
+    comment_id = rec.get("commentId") or rec.get("comment_id")
+    if not docket_id or not comment_id:
+        return None
+    attachment_id = rec.get("attachmentId") or rec.get("attachment_id")
+    if not attachment_id:
+        attachment_id = f"{comment_id}_attachment_1"
+    method = rec.get("extractedMethod") or rec.get("extracted_method") or ""
+    return {
+        "docketId": str(docket_id),
+        "commentId": str(comment_id),
+        "attachmentId": str(attachment_id),
+        "extractedMethod": str(method),
+        "extractedText": text,
+    }
+
+
+def ingest_extracted_text_to_comments_extracted_text(
+    client: Any, records: list[dict[str, Any]]
+) -> int:
+    """Index derived extracted-text records into OpenSearch ``comments_extracted_text``."""
+    indexed = 0
+    for rec in records:
+        body = _normalized_comments_extracted_text_body(rec)
+        if not body:
+            continue
+        client.index(
+            index=OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX,
+            id=body["attachmentId"],
+            body=body,
+        )
+        indexed += 1
+    if indexed:
+        log.info(
+            "OpenSearch: indexed %d extracted-text document(s) into %s",
+            indexed,
+            OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX,
+        )
+    return indexed
 
 
 def document_content_html_paths(docket_dir: Path) -> list[tuple[str, Path]]:
@@ -604,7 +691,11 @@ def main():
         ingest_into_postgresql(docket_dir, args)
 
     try:
-        ingest_htm_files(docket_dir, get_opensearch_connection())
+        client = get_opensearch_connection()
+        ingest_htm_files(docket_dir, client)
+        if extracted_records:
+            ensure_comments_extracted_text_index(client)
+            ingest_extracted_text_to_comments_extracted_text(client, extracted_records)
     except Exception as exc:
         log.warning("OpenSearch ingest skipped or failed: %s", exc)
 
