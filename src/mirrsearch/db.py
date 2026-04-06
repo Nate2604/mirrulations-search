@@ -643,7 +643,7 @@ class DBLayer:
         self.conn.commit()
         return True
 
-    def create_download_job(
+    def create_download_job(  # pylint: disable=too-many-locals
             self,
             user_email: str,
             docket_ids: List[str],
