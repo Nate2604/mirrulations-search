@@ -94,7 +94,7 @@ def _opensearch_comment_id_terms_size() -> int:
 
 
 @dataclass(frozen=True)
-class DBLayer:
+class DBLayer:  # pylint: disable=too-many-public-methods
     conn: Any = None
 
     def search( # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-branches,too-many-statements
