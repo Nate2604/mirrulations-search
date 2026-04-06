@@ -9,6 +9,7 @@ import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
 import { motion } from "motion/react";
 import { ArrowLeftIcon, ArrowRightIcon, BooksIcon } from "@phosphor-icons/react";
+import DownloadStatusModal from "./components/DownloadStatusModal";
 
 
 export default function App() {
