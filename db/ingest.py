@@ -78,6 +78,27 @@ FR_API_URL = "https://www.federalregister.gov/api/v1/documents/{}.json"
 
 _REQUIRED_FR_TABLES = frozenset({"federal_register_documents", "cfrparts"})
 
+OPENSEARCH_DOCUMENTS_INDEX = "documents"
+
+DOCUMENTS_INDEX_BODY: dict[str, Any] = {
+    "mappings": {
+        "properties": {
+            "docketId": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "documentId": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+            "documentText": {
+                "type": "text",
+                "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+            },
+        }
+    }
+}
+
 OPENSEARCH_COMMENTS_INDEX = "comments"
 
 COMMENTS_INDEX_BODY: dict[str, Any] = {
@@ -229,12 +250,15 @@ def get_htm_files(docket_dir: Path) -> list[dict[str, Any]]:
     """
     Discover ``.htm`` / ``.html`` files under ``raw-data/documents/`` (recursive).
     Returns dicts with ``docketId``, ``documentId`` (file name), ``documentHtm`` (body text).
+    If no HTM files found, extract document metadata from JSON files instead.
     """
     docs_dir = docket_dir / "raw-data" / "documents"
     if not docs_dir.is_dir():
         return []
     did = get_docket_ID(docket_dir)
     out: list[dict[str, Any]] = []
+    
+    # First, try to find HTM/HTML files
     for pattern in ("**/*.htm", "**/*.html"):
         for path in sorted(docs_dir.glob(pattern)):
             if not path.is_file():
@@ -251,14 +275,68 @@ def get_htm_files(docket_dir: Path) -> list[dict[str, Any]]:
                     "documentHtm": text,
                 }
             )
+    
+    # If no HTM files found, extract metadata from JSON documents
+    if not out:
+        for json_path in sorted(docs_dir.glob("*.json")):
+            if not json_path.is_file():
+                continue
+            try:
+                payload = load_raw_json(json_path)
+            except (OSError, json.JSONDecodeError) as exc:
+                log.warning("Could not read or parse %s: %s", json_path, exc)
+                continue
+            
+            if not isinstance(payload, dict):
+                continue
+            
+            data = payload.get("data", {})
+            if not isinstance(data, dict):
+                continue
+            
+            doc_id = data.get("id")
+            attrs = data.get("attributes", {})
+            if not isinstance(attrs, dict):
+                continue
+            
+            # Extract available text: title + abstract
+            title = attrs.get("title", "")
+            abstract = attrs.get("docAbstract", "")
+            doc_text = f"{title}\n\n{abstract}" if title and abstract else (title or abstract or "")
+            
+            if not doc_text.strip():
+                continue
+            
+            out.append(
+                {
+                    "docketId": did,
+                    "documentId": doc_id or json_path.stem,
+                    "documentHtm": doc_text,
+                }
+            )
+    
     return out
 
 
-def ingest_htm_files(docket_dir: Path, client: Any) -> None:
-    """Index each discovered HTM/HTML file into OpenSearch (``documents`` index)."""
-    for item in get_htm_files(docket_dir):
+def ensure_documents_index(client: Any) -> None:
+    """Create the OpenSearch ``documents`` index if it does not exist."""
+    if client.indices.exists(index=OPENSEARCH_DOCUMENTS_INDEX):
+        return
+    client.indices.create(index=OPENSEARCH_DOCUMENTS_INDEX, body=DOCUMENTS_INDEX_BODY)
+
+
+def ingest_htm_files(docket_dir: Path, client: Any) -> int:
+    """Index each discovered HTM/HTML file into OpenSearch (``documents`` index). Returns count ingested."""
+    items = get_htm_files(docket_dir)
+    if not items:
+        log.info("No HTM/HTML files found in %s/raw-data/documents/", docket_dir.name)
+        return 0
+    
+    ensure_documents_index(client)
+    indexed = 0
+    for item in items:
         client.index(
-            index="documents",
+            index=OPENSEARCH_DOCUMENTS_INDEX,
             id=item["documentId"],
             body={
                 "docketId": item["docketId"],
@@ -266,6 +344,15 @@ def ingest_htm_files(docket_dir: Path, client: Any) -> None:
                 "documentText": item["documentHtm"],
             },
         )
+        indexed += 1
+    
+    if indexed:
+        log.info(
+            "OpenSearch: indexed %d document(s) into %s",
+            indexed,
+            OPENSEARCH_DOCUMENTS_INDEX,
+        )
+    return indexed
 
 
 def iter_comment_json_paths(docket_dir: Path) -> list[Path]:
@@ -796,14 +883,22 @@ def main():
 
     try:
         client = get_opensearch_connection()
-        ingest_htm_files(docket_dir, client)
+        d_count = ingest_htm_files(docket_dir, client)
+        c_count = 0
         if not args.skip_comments_ingest:
-            ingest_comment_json_to_opensearch(docket_dir, client)
+            c_count = ingest_comment_json_to_opensearch(docket_dir, client)
         if extracted_records:
             ensure_comments_extracted_text_index(client)
             ingest_extracted_text_to_comments_extracted_text(client, extracted_records)
+        log.info(
+            "OpenSearch ingest complete: %d document(s), %d comment(s), %d extracted text(s)",
+            d_count,
+            c_count,
+            len(extracted_records),
+        )
     except Exception as exc:
-        log.warning("OpenSearch ingest skipped or failed: %s", exc)
+        log.error("OpenSearch ingest failed: %s", exc, exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
