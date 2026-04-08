@@ -826,12 +826,12 @@ _OPENSEARCH_CLIENT_SINGLETON = None
 
 def get_opensearch_connection():
     global _OPENSEARCH_CLIENT_SINGLETON  # pylint: disable=global-statement
-    if _OPENSEARCH_CLIENT_SINGLETON is not None:
-        return _OPENSEARCH_CLIENT_SINGLETON
 
     host = (os.getenv("OPENSEARCH_HOST") or "").strip()
 
     if "aoss.amazonaws.com" in host:
+        if _OPENSEARCH_CLIENT_SINGLETON is not None:
+            return _OPENSEARCH_CLIENT_SINGLETON
         creds = boto3.Session().get_credentials()
         auth = AWS4Auth(
             refreshable_credentials=creds,
@@ -841,9 +841,8 @@ def get_opensearch_connection():
         session = requests.Session()
         session.auth = auth
         _OPENSEARCH_CLIENT_SINGLETON = _AossClient(host, session)
-    else:
-        if LOAD_DOTENV is not None:
-            LOAD_DOTENV()
-        _OPENSEARCH_CLIENT_SINGLETON = OpenSearch(**_opensearch_client_kwargs())
+        return _OPENSEARCH_CLIENT_SINGLETON
 
-    return _OPENSEARCH_CLIENT_SINGLETON
+    if LOAD_DOTENV is not None:
+        LOAD_DOTENV()
+    return OpenSearch(**_opensearch_client_kwargs())
