@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { motion } from "motion/react"
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -51,6 +51,7 @@ export default function AdvancedSidebar({
   const docTypes = ["Rulemaking", "Nonrulemaking"];
   const [value, setOnchange] = useState([new Date(), new Date()]);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const dateRangeRef = useRef(null);
   //const statuses = ["Open", "Closed", "Pending"];
   const [agencyOrder, setAgencyOrder] = useState([]);
   const [selectedTitle, setSelectedTitle] = useState("");
@@ -85,6 +86,24 @@ export default function AdvancedSidebar({
       })
       .finally(() => setAgenciesLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!calendarOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!dateRangeRef.current?.contains(event.target)) {
+        setCalendarOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [calendarOpen]);
 
   const selectedCfrList = useMemo(() => {
     return Object.entries(selectedCfrParts).flatMap(([title, parts]) =>
@@ -365,6 +384,7 @@ export default function AdvancedSidebar({
 
             </div>
 
+            <div className="dateRangePicker" ref={dateRangeRef}>
             <div className="row">
             <input
             value={yearFrom}
@@ -473,6 +493,7 @@ export default function AdvancedSidebar({
               />
             </div>
             )}
+            </div>
           </CollapsibleSection>
 
           {/* Agency */}
