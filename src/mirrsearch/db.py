@@ -4,6 +4,12 @@ from typing import List, Dict, Any, Set
 import os
 import psycopg2
 from opensearchpy import OpenSearch
+try:
+    import requests
+    from requests_aws4auth import AWS4Auth
+except ImportError:
+    requests = None
+    AWS4Auth = None
 
 try:
     import boto3
@@ -443,14 +449,15 @@ class DBLayer:  # pylint: disable=too-many-public-methods
             print(f"OpenSearch totals query failed (fallback zeros): {e}")
             return {}
 
-    def _fetch_docket_totals(
+    def _fetch_docket_totals(  # pylint: disable=too-many-locals
             self, opensearch_client, docket_ids: List[str]) -> Dict[str, Dict[str, int]]:
         """Document totals from RDS, comment totals from OpenSearch."""
         totals: Dict[str, Dict[str, int]] = {}
         if self.conn is not None:
             with self.conn.cursor() as cur:
                 cur.execute(
-                    "SELECT docket_id, COUNT(*) FROM documentsWithFRdoc WHERE docket_id = ANY(%s) GROUP BY docket_id",
+                    "SELECT docket_id, COUNT(*) FROM documentsWithFRdoc "
+                    "WHERE docket_id = ANY(%s) GROUP BY docket_id",
                     (list(docket_ids),)
                 )
                 for docket_id, count in cur.fetchall():
@@ -466,7 +473,7 @@ class DBLayer:  # pylint: disable=too-many-public-methods
                 docket_id = str(bucket["key"])
                 totals.setdefault(docket_id, {"document_total_count": 0, "comment_total_count": 0})
                 totals[docket_id]["comment_total_count"] = bucket["doc_count"]
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Comment totals query failed: {e}")
         return totals
 
@@ -801,7 +808,7 @@ def _opensearch_client_kwargs() -> Dict[str, Any]:
     return kwargs
 
 
-class _AossClient:
+class _AossClient:  # pylint: disable=too-few-public-methods
     """Thin requests-based client that mimics opensearchpy .search() interface."""
     def __init__(self, base_url, session):
         self.base_url = base_url.rstrip('/')
@@ -814,19 +821,17 @@ class _AossClient:
         return resp.json()
 
 
-_opensearch_client_singleton = None
+_OPENSEARCH_CLIENT_SINGLETON = None
 
 
 def get_opensearch_connection():
-    global _opensearch_client_singleton
-    if _opensearch_client_singleton is not None:
-        return _opensearch_client_singleton
+    global _OPENSEARCH_CLIENT_SINGLETON  # pylint: disable=global-statement
+    if _OPENSEARCH_CLIENT_SINGLETON is not None:
+        return _OPENSEARCH_CLIENT_SINGLETON
 
     host = (os.getenv("OPENSEARCH_HOST") or "").strip()
 
     if "aoss.amazonaws.com" in host:
-        import requests
-        from requests_aws4auth import AWS4Auth
         creds = boto3.Session().get_credentials()
         auth = AWS4Auth(
             refreshable_credentials=creds,
@@ -835,10 +840,10 @@ def get_opensearch_connection():
         )
         session = requests.Session()
         session.auth = auth
-        _opensearch_client_singleton = _AossClient(host, session)
+        _OPENSEARCH_CLIENT_SINGLETON = _AossClient(host, session)
     else:
         if LOAD_DOTENV is not None:
             LOAD_DOTENV()
-        _opensearch_client_singleton = OpenSearch(**_opensearch_client_kwargs())
+        _OPENSEARCH_CLIENT_SINGLETON = OpenSearch(**_opensearch_client_kwargs())
 
-    return _opensearch_client_singleton
+    return _OPENSEARCH_CLIENT_SINGLETON
