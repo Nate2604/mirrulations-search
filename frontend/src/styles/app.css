@@ -302,6 +302,17 @@
 	flex-direction:column;
 	gap:6px;
   }
+
+  .agencyListLabel{
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #e7e9f2;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	color: #6b7280;
+	text-transform: uppercase;
+  }
   
   .hintText{
 	margin-top: 8px;
