@@ -331,13 +331,15 @@
 	border-radius: 16px;
 	padding: 14px;
 	margin-top: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 	width: 100%;
   }
-  
-  .result-title {
+
+ .result-title {
     margin-bottom: 10px;
-  }
+    width: 100%;
+    word-wrap: break-word;
+}
   
   .result-meta p {
     margin: 4px 0;
@@ -345,12 +347,21 @@
     color: #555;
   }
 
-  .fraction-line{
+  .result-card-body {
+    display: block;
+    width: 100%;
+}
+
+  .result-card-info {
+    width: 100%;
+}
+
+  .fraction-line {
     margin-top: 8px;
     font-size: 14px;
   }
 
-  .fraction-line strong{
+  .fraction-line strong {
     font-weight: 900;
   }
   
@@ -358,7 +369,6 @@
     margin-top: 12px;
     line-height: 1.5;
   }
-
 
   .pagination-div {
 	margin-top: 30px;
