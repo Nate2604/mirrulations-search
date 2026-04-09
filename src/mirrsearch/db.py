@@ -824,10 +824,24 @@ class _AossClient:  # pylint: disable=too-few-public-methods
 _OPENSEARCH_CLIENT_SINGLETON = None
 
 
-def get_opensearch_connection():
+def get_opensearch_connection():  # pylint: disable=too-many-branches,too-many-statements
     global _OPENSEARCH_CLIENT_SINGLETON  # pylint: disable=global-statement
 
     host = (os.getenv("OPENSEARCH_HOST") or "").strip()
+
+    use_aws = os.getenv("USE_AWS_SECRETS", "").lower() in {"1", "true", "yes", "on"}
+    if not host and use_aws and boto3 is not None:
+        try:
+            sm = boto3.client("secretsmanager", region_name="us-east-1")
+            secret = json.loads(
+                sm.get_secret_value(SecretId="mirrulations/opensearch")["SecretString"]
+            )
+            raw_host = secret.get("host", "").strip()
+            if raw_host and not raw_host.startswith("http"):
+                raw_host = "https://" + raw_host
+            host = raw_host
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
 
     if "aoss.amazonaws.com" in host:
         if _OPENSEARCH_CLIENT_SINGLETON is not None:
