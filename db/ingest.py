@@ -233,37 +233,46 @@ def parse_args() -> argparse.Namespace:
 
 def fetch_docket(docket_id: str, output_dir: str) -> Path:
     """Use mirrulations-fetch to download docket data."""
-    log.info("Fetching docket data for %s using mirrulations-fetch...", docket_id)
+    log.info(
+        "Fetching docket data for %s using mirrulations-fetch...", docket_id
+    )
     try:
         # Run fetch with a spinner animation
-        spinner = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
-        proc = subprocess.Popen(
+        spinner = itertools.cycle(
+            ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        )
+        with subprocess.Popen(  # pylint: disable=consider-using-with
             ["mirrulations-fetch", docket_id],
             cwd=output_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-        )
-        while proc.poll() is None:
-            sys.stdout.write(f'\r{next(spinner)}')
+        ) as proc:
+            while proc.poll() is None:
+                sys.stdout.write(f'\r{next(spinner)}')
+                sys.stdout.flush()
+                time.sleep(0.1)
+            sys.stdout.write('\r \r')  # Clear spinner
             sys.stdout.flush()
-            time.sleep(0.1)
-        sys.stdout.write('\r \r')  # Clear spinner
-        sys.stdout.flush()
-        
-        if proc.returncode != 0:
-            _, stderr = proc.communicate()
-            log.error("Fetch failed: %s", stderr)
-            sys.exit(1)
-            
+
+            if proc.returncode != 0:
+                _, stderr = proc.communicate()
+                log.error("Fetch failed: %s", stderr)
+                sys.exit(1)
+
         docket_path = Path(output_dir) / docket_id
         if not docket_path.exists():
-            log.error("Expected docket directory not found: %s", docket_path)
+            log.error(
+                "Expected docket directory not found: %s", docket_path
+            )
             sys.exit(1)
         return docket_path
-    except FileNotFoundError:
-        log.error("mirrulations-fetch not found. Install it via: pip install mirrulations-fetch")
-        sys.exit(1)
+    except FileNotFoundError as exc:
+        log.error(
+            "mirrulations-fetch not found. "
+            "Install it via: pip install mirrulations-fetch"
+        )
+        raise SystemExit(1) from exc
 
 
 def get_docket_ID(docket_dir: Path) -> str:
@@ -356,7 +365,10 @@ def ensure_documents_index(client: Any) -> None:
 
 
 def ingest_htm_files(docket_dir: Path, client: Any) -> int:
-    """Index each discovered HTM/HTML file into OpenSearch (``documents`` index). Returns count ingested."""
+    """
+    Index each discovered HTM/HTML file into OpenSearch (``documents`` index).
+    Returns count ingested.
+    """
     items = get_htm_files(docket_dir)
     if not items:
         log.info("No HTM/HTML files found in %s/raw-data/documents/", docket_dir.name)
@@ -585,13 +597,18 @@ def iter_extracted_plain_txt_files(docket_dir: Path) -> list[Path]:
 def read_derived_extracted_plain_text(docket_dir: Path) -> list[dict[str, Any]]:
     """
     Load plain-text extractions (PDF attachment text). Filenames must look like
-    ``<commentId>_attachment_<n>_extracted.txt``. ``extractedMethod`` is taken from the parent
-    directory name (e.g. ``pypdf``).
+    ``<commentId>_attachment_<n>_extracted.txt``. ``extractedMethod`` is taken from the
+    parent directory name (e.g. ``pypdf``).
     """
     docket_id = docket_dir.name
     out: list[dict[str, Any]] = []
     files = iter_extracted_plain_txt_files(docket_dir)
-    for path in tqdm(files, desc="Reading extracted plain text files", unit="file", disable=len(files) < 50):
+    for path in tqdm(
+        files,
+        desc="Reading extracted plain text files",
+        unit="file",
+        disable=len(files) < 50,
+    ):
         m = _EXTRACTED_PLAIN_NAME.match(path.name)
         if not m:
             log.warning(
@@ -628,7 +645,12 @@ def read_derived_extracted_text(docket_dir: Path) -> list[dict[str, Any]]:
     """
     records: list[dict[str, Any]] = []
     json_files = iter_extracted_txt_json_files(docket_dir)
-    for path in tqdm(json_files, desc="Reading extracted JSON files", unit="file", disable=len(json_files) < 50):
+    for path in tqdm(
+        json_files,
+        desc="Reading extracted JSON files",
+        unit="file",
+        disable=len(json_files) < 50,
+    ):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
@@ -672,7 +694,12 @@ def collect_frdocnums_from_docket(docket_dir: Path) -> set[str]:
         return set()
     all_nums: set[str] = set()
     json_files = list(docs_dir.glob("*.json"))
-    for path in tqdm(json_files, desc="Extracting frDocNum values", unit="doc", disable=len(json_files) < 20):
+    for path in tqdm(
+        json_files,
+        desc="Extracting frDocNum values",
+        unit="doc",
+        disable=len(json_files) < 20,
+    ):
         all_nums.update(extract_frdocnums_from_document_json(path))
     return all_nums
 
@@ -755,7 +782,12 @@ def ingest_federal_register_for_docket(
 
     ingested = 0
     skipped = 0
-    for frdocnum in tqdm(sorted(frdocnums), desc="Fetching Federal Register documents", unit="doc", disable=len(frdocnums) < 5):
+    for frdocnum in tqdm(
+        sorted(frdocnums),
+        desc="Fetching Federal Register documents",
+        unit="doc",
+        disable=len(frdocnums) < 5,
+    ):
         doc = fetch_fr_document(frdocnum)
         if not doc:
             skipped += 1
@@ -779,13 +811,19 @@ def ingest_federal_register_for_docket(
 
 def ingest_into_postgresql_dry_run(docket_dir: Path, args: argparse.Namespace) -> None:
     log.info("DRY RUN — no database writes.")
-    ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn=None, dry_run=True, verbose=args.verbose)
+    ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(
+        docket_dir, conn=None, dry_run=True, verbose=args.verbose
+    )
     pc, cs = (0, 0)
     if ok and not args.skip_comments_ingest:
-        pc, cs = ingest_comments(docket_dir, conn=None, dry_run=True, verbose=args.verbose)
+        pc, cs = ingest_comments(
+            docket_dir, conn=None, dry_run=True, verbose=args.verbose
+        )
     fr_i, fr_sk = (0, 0)
     if ok and not args.skip_federal_register:
-        fr_i, fr_sk = ingest_federal_register_for_docket(docket_dir, None, args, dry_run=True)
+        fr_i, fr_sk = ingest_federal_register_for_docket(
+            docket_dir, None, args, dry_run=True
+        )
     if ok:
         if args.skip_comments_ingest:
             log.info("Documents: %d upserted", n_doc)
@@ -827,7 +865,9 @@ def ingest_into_postgresql(docket_dir: Path, args: argparse.Namespace) -> None:
     _ensure_comments_document_fk(conn)
 
     try:
-        ok, n_doc, sk, fetched_docket_id = ingest_docket_and_documents(docket_dir, conn, dry_run=False, verbose=args.verbose)
+        ok, n_doc, sk, docket_id = ingest_docket_and_documents(
+            docket_dir, conn, dry_run=False, verbose=args.verbose
+        )
         pc, cs = (0, 0)
         if ok and not args.skip_comments_ingest:
             pc, cs = ingest_comments(docket_dir, conn, dry_run=False, verbose=args.verbose)
@@ -849,7 +889,7 @@ def ingest_into_postgresql(docket_dir: Path, args: argparse.Namespace) -> None:
                 )
             _ingest_summary(
                 docket_dir,
-                fetched_docket_id,
+                docket_id,
                 conn,
                 dry_run=False,
                 skip_comments_ingest=args.skip_comments_ingest,
