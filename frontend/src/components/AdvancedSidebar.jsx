@@ -49,7 +49,7 @@ export default function AdvancedSidebar({
   activeCount,
 }) {
   const docTypes = ["Rulemaking", "Nonrulemaking"];
-  const [value, setOnchange] = useState([new Date(), new Date()]);
+  const [calendarValue, setCalendarValue] = useState([new Date(), new Date()]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const dateRangeRef = useRef(null);
   //const statuses = ["Open", "Closed", "Pending"];
@@ -251,9 +251,8 @@ export default function AdvancedSidebar({
     return val;
   };
 
-  const isValidDate = (str) => {
-    const d = new Date(str);
-    return !isNaN(d.getTime());
+  const isFullDate = (str) => {
+    return /^\d{4}-\d{2}-\d{2}$/.test(str);
   };
 
   const filteredCfrParts = useMemo(() => {
@@ -340,7 +339,7 @@ export default function AdvancedSidebar({
                 onClick={() => {
                   setYearFrom("");
                   setYearTo("");
-                  setOnchange([null, null]);
+                  setCalendarValue([null, null]);
                   setCalendarOpen(false);
                 }}
               >
@@ -357,7 +356,7 @@ export default function AdvancedSidebar({
               const format = (d) => d.toLocaleDateString("en-CA");
               setYearFrom(format(start));
               setYearTo(format(end));
-              setOnchange([start, end]);
+              setCalendarValue([start, end]);
               setCalendarOpen(false);
             }}
           >
@@ -375,7 +374,7 @@ export default function AdvancedSidebar({
               const format = (d) => d.toLocaleDateString("en-CA");
               setYearFrom(format(start));
               setYearTo(format(end));
-              setOnchange([start, end]);
+              setCalendarValue([start, end]);
               setCalendarOpen(false);
             }}
           >
@@ -400,25 +399,28 @@ export default function AdvancedSidebar({
 
               if (isYearOnly) {
                 const endNorm = `${raw.trim()}-12-31`;
-                setYearTo(endNorm);                          // auto-fill To
+
+                if (!isFullDate(normalized) || !isFullDate(endNorm)) return;
+
                 const [y, m, d] = normalized.split("-").map(Number);
                 const [ey, em, ed] = endNorm.split("-").map(Number);
+
+                setYearTo(endNorm);
+                
                 const localStart = new Date(y, m - 1, d);
                 const localEnd = new Date(ey, em - 1, ed);
-                setOnchange([localStart, localEnd]);
+                setCalendarValue([localStart, localEnd]);
               } 
               else if (
-                normalized &&
-                yearTo &&
-                isValidDate(normalized) &&
-                isValidDate(yearTo)
+                isFullDate(normalized) &&
+                isFullDate(yearTo)
               ) 
               {
                 const [y, m, d] = normalized.split("-").map(Number);
                 const [ey, em, ed] = yearTo.split("-").map(Number);
                 const localStart = new Date(y, m - 1, d);
                 const localEnd = new Date(ey, em - 1, ed);
-                setOnchange([localStart, localEnd]);
+                setCalendarValue([localStart, localEnd]);
               }
             }}
             placeholder="YYYY or YYYY-MM-DD"
@@ -441,20 +443,20 @@ export default function AdvancedSidebar({
                 const [ey, em, ed] = normalized.split("-").map(Number);
                 const localStart = new Date(sy, sm - 1, sd);
                 const localEnd = new Date(ey, em - 1, ed);
-                setOnchange([localStart, localEnd]);
+                setCalendarValue([localStart, localEnd]);
               } 
               else if (
                 yearFrom &&
                 normalized &&
-                isValidDate(yearFrom) &&
-                isValidDate(normalized)
+                isFullDate(yearFrom) &&
+                isFullDate(normalized)
               ) 
               {
                 const [sy, sm, sd] = yearFrom.split("-").map(Number);
                 const [ey, em, ed] = normalized.split("-").map(Number);
                 const localStart = new Date(sy, sm - 1, sd);
                 const localEnd = new Date(ey, em - 1, ed);
-                setOnchange([localStart, localEnd]);
+                setCalendarValue([localStart, localEnd]);
               }
             }}
             placeholder="YYYY or YYYY-MM-DD"
@@ -472,7 +474,7 @@ export default function AdvancedSidebar({
 
                   // Handle first click (no end yet)
                   if (!end) {
-                    setOnchange([start, null]);
+                    setCalendarValue([start, null]);
                     setYearFrom(start.toISOString().split("T")[0]);
                     return;
                   }
@@ -484,12 +486,12 @@ export default function AdvancedSidebar({
 
                   const format = (d) => d.toLocaleDateString("en-CA");
 
-                  setOnchange([start, end]);
+                  setCalendarValue([start, end]);
                   setYearFrom(format(start));
                   setYearTo(format(end));
                   setCalendarOpen(false);
                 }}
-                value={value}
+                value={calendarValue}
               />
             </div>
             )}
