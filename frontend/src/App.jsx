@@ -9,6 +9,7 @@ import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
 import { motion } from "motion/react";
 import { ArrowLeftIcon, ArrowRightIcon, BooksIcon } from "@phosphor-icons/react";
+import DownloadStatusModal from "./components/DownloadStatusModal";
 
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [openDownloadStatus, setOpenDownloadStatus] = useState(null);
   /** Passed as GET /search/?sort_by= (empty = server default relevance) */
   const [searchSortBy, setSearchSortBy] = useState("");
 
@@ -152,6 +154,7 @@ export default function App() {
                     <a href="/logout" className="btn btn-primary">
                       Log Out
                     </a>
+                    <button className="btn btn-primary" onClick={() => setOpenDownloadStatus(true)}>Check Downloads</button>
                   </div>
                 ) : (
                   <a href="/login" className="btn btn-primary">
@@ -164,6 +167,9 @@ export default function App() {
                   <Collections />
                 </main>
               </div>
+              {openDownloadStatus && (
+              <DownloadStatusModal onClose={() => setOpenDownloadStatus(null)} />
+              )}
             </div>
           )
         }
