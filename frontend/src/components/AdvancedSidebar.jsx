@@ -197,6 +197,15 @@ export default function AdvancedSidebar({
     return orderedAgencies.slice(0, minVisible);
   }, [agencySearch, orderedAgencies, selectedAgencies.size]);
 
+  const selectedAgenciesBelowSearch = useMemo(() => {
+    if (!agencySearch.trim()) return [];
+
+    const visibleCodes = new Set(visibleAgencies.map((agency) => agency.code));
+    return orderedAgencies.filter(
+      (agency) => selectedAgencies.has(agency.code) && !visibleCodes.has(agency.code)
+    );
+  }, [agencySearch, orderedAgencies, selectedAgencies, visibleAgencies]);
+
   const toggleAgency = (code) => {
     setSelectedAgencies((prev) => {
       const next = new Set(prev);
@@ -220,6 +229,11 @@ export default function AdvancedSidebar({
       return isEnd ? `${val.trim()}-12-31` : `${val.trim()}-01-01`;
     }
     return val;
+  };
+
+  const isValidDate = (str) => {
+    const d = new Date(str);
+    return !isNaN(d.getTime());
   };
 
   const filteredCfrParts = useMemo(() => {
@@ -361,9 +375,24 @@ export default function AdvancedSidebar({
               if (isYearOnly) {
                 const endNorm = `${raw.trim()}-12-31`;
                 setYearTo(endNorm);                          // auto-fill To
-                setOnchange([new Date(normalized), new Date(endNorm)]);
-              } else if (normalized && yearTo) {
-                setOnchange([new Date(normalized), new Date(yearTo)]);
+                const [y, m, d] = normalized.split("-").map(Number);
+                const [ey, em, ed] = endNorm.split("-").map(Number);
+                const localStart = new Date(y, m - 1, d);
+                const localEnd = new Date(ey, em - 1, ed);
+                setOnchange([localStart, localEnd]);
+              } 
+              else if (
+                normalized &&
+                yearTo &&
+                isValidDate(normalized) &&
+                isValidDate(yearTo)
+              ) 
+              {
+                const [y, m, d] = normalized.split("-").map(Number);
+                const [ey, em, ed] = yearTo.split("-").map(Number);
+                const localStart = new Date(y, m - 1, d);
+                const localEnd = new Date(ey, em - 1, ed);
+                setOnchange([localStart, localEnd]);
               }
             }}
             placeholder="YYYY or YYYY-MM-DD"
@@ -380,9 +409,24 @@ export default function AdvancedSidebar({
 
               if (isYearOnly) {
                 const startNorm = yearFrom || `${raw.trim()}-01-01`;
-                setOnchange([new Date(startNorm), new Date(normalized)]);
-              } else if (yearFrom && normalized) {
-                setOnchange([new Date(yearFrom), new Date(normalized)]);
+                const [sy, sm, sd] = startNorm.split("-").map(Number);
+                const [ey, em, ed] = normalized.split("-").map(Number);
+                const localStart = new Date(sy, sm - 1, sd);
+                const localEnd = new Date(ey, em - 1, ed);
+                setOnchange([localStart, localEnd]);
+              } 
+              else if (
+                yearFrom &&
+                normalized &&
+                isValidDate(yearFrom) &&
+                isValidDate(normalized)
+              ) 
+              {
+                const [sy, sm, sd] = yearFrom.split("-").map(Number);
+                const [ey, em, ed] = normalized.split("-").map(Number);
+                const localStart = new Date(sy, sm - 1, sd);
+                const localEnd = new Date(ey, em - 1, ed);
+                setOnchange([localStart, localEnd]);
               }
             }}
             placeholder="YYYY or YYYY-MM-DD"
@@ -452,6 +496,24 @@ export default function AdvancedSidebar({
                     </span>
                   </label>
                 ))}
+
+                {selectedAgenciesBelowSearch.length > 0 && (
+                  <>
+                    <div className="agencyListLabel">Selected agencies</div>
+                    {selectedAgenciesBelowSearch.map((a) => (
+                      <label key={`selected-${a.code}`} className="check">
+                        <input
+                          type="checkbox"
+                          checked={selectedAgencies.has(a.code)}
+                          onChange={() => toggleAgency(a.code)}
+                        />
+                        <span>
+                          {a.code} — {a.name}
+                        </span>
+                      </label>
+                    ))}
+                  </>
+                )}
               </div>
             )}
 
