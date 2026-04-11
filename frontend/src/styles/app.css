@@ -23,6 +23,31 @@
   }
   
   .brand{ font-weight:700; }
+  a.brand.brand-link{
+    color: inherit;
+    text-decoration: none;
+  }
+  a.brand.brand-link:hover{
+    opacity: 0.88;
+  }
+  .topbar-right{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .topbar-privacy{
+    font-size: 0.9rem;
+  }
+  .topbar-privacy a{
+    color: #5a5fe6;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .topbar-privacy a:hover{
+    text-decoration: underline;
+  }
   
   .layout{
 	width:min(1200px, calc(100% - 48px));

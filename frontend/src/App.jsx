@@ -1,6 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
+import Home from "./pages/Home";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Collections from "./pages/Collections";
 import "./styles/app.css";
 import { searchDockets, getAuthStatus } from "./api/searchApi";
@@ -131,6 +133,9 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+
       <Route path="/login" element={<Login />} />
       <Route
         path="/collections"
@@ -140,27 +145,34 @@ export default function App() {
           ) : (
             <div className="page">
               <header className="topbar">
-                <div className="brand">Mirrulations</div>
-                {user ? (
-                  <div className="auth-section">
-                    <span className="auth-name">{user.name}</span>
-                    <Link
-                      to={onCollectionsPage ? "/" : "/collections"}
-                      className="btn btn-primary collections-nav-btn"
-                    >
-                      <BooksIcon size={24} weight="duotone" />
-                      {onCollectionsPage ? "Back to Search" : "My Collections"}
-                    </Link>
-                    <a href="/logout" className="btn btn-primary">
-                      Log Out
+                <Link to="/" className="brand brand-link">
+                  Mirrulations
+                </Link>
+                <div className="topbar-right">
+                  <span className="topbar-privacy">
+                    <Link to="/privacy">Privacy</Link>
+                  </span>
+                  {user ? (
+                    <div className="auth-section">
+                      <span className="auth-name">{user.name}</span>
+                      <Link
+                        to={onCollectionsPage ? "/explorer" : "/collections"}
+                        className="btn btn-primary collections-nav-btn"
+                      >
+                        <BooksIcon size={24} weight="duotone" />
+                        {onCollectionsPage ? "Back to Search" : "My Collections"}
+                      </Link>
+                      <a href="/logout" className="btn btn-primary">
+                        Log Out
+                      </a>
+                      <button className="btn btn-primary" onClick={() => setOpenDownloadStatus(true)}>Check Downloads</button>
+                    </div>
+                  ) : (
+                    <a href="/login" className="btn btn-primary">
+                      Log In
                     </a>
-                    <button className="btn btn-primary" onClick={() => setOpenDownloadStatus(true)}>Check Downloads</button>
-                  </div>
-                ) : (
-                  <a href="/login" className="btn btn-primary">
-                    Log In
-                  </a>
-                )}
+                  )}
+                </div>
               </header>
               <div className="layout layout-single">
                 <main className="main">
@@ -175,33 +187,40 @@ export default function App() {
         }
       />
       <Route
-        path="/"
+        path="/explorer"
         element={
           user === null && !authLoading ? (
             <Navigate to="/login" replace />
           ) : (
             <div className="page">
               <header className="topbar">
-                <div className="brand">Mirrulations</div>
-                {user ? (
-                  <div className="auth-section">
-                    <span className="auth-name">{user.name}</span>
-                    <Link
-                      to={onCollectionsPage ? "/" : "/collections"}
-                      className="btn btn-primary collections-nav-btn"
-                    >
-                      <BooksIcon size={24} weight="duotone" />
-                      {onCollectionsPage ? "Back to Search" : "My Collections"}
-                    </Link>
-                    <a href="/logout" className="btn btn-primary">
-                      Log Out
+                <Link to="/" className="brand brand-link">
+                  Mirrulations
+                </Link>
+                <div className="topbar-right">
+                  <span className="topbar-privacy">
+                    <Link to="/privacy">Privacy</Link>
+                  </span>
+                  {user ? (
+                    <div className="auth-section">
+                      <span className="auth-name">{user.name}</span>
+                      <Link
+                        to={onCollectionsPage ? "/explorer" : "/collections"}
+                        className="btn btn-primary collections-nav-btn"
+                      >
+                        <BooksIcon size={24} weight="duotone" />
+                        {onCollectionsPage ? "Back to Search" : "My Collections"}
+                      </Link>
+                      <a href="/logout" className="btn btn-primary">
+                        Log Out
+                      </a>
+                    </div>
+                  ) : (
+                    <a href="/login" className="btn btn-primary">
+                      Log In
                     </a>
-                  </div>
-                ) : (
-                  <a href="/login" className="btn btn-primary">
-                    Log In
-                  </a>
-                )}
+                  )}
+                </div>
               </header>
               <div className="layout">
                 <AdvancedSidebar
