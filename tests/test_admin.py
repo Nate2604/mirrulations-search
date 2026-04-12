@@ -228,7 +228,8 @@ def test_add_authorized_user_forbidden_for_non_admin(client):  # pylint: disable
 
 def test_add_authorized_user_success(admin_client):  # pylint: disable=redefined-outer-name
     """POST /api/authorized creates user and returns 201"""
-    response = admin_client.post('/api/authorized', json={"email": "new@example.com", "name": "New User"})
+    response = admin_client.post('/api/authorized',
+                                 json={"email": "new@example.com", "name": "New User"})
     assert response.status_code == 201
     data = response.get_json()
     assert data["email"] == "new@example.com"
