@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
 from ingest import (
     OPENSEARCH_COMMENTS_EXTRACTED_TEXT_INDEX,
     OPENSEARCH_COMMENTS_INDEX,
-    collect_frdoc nums_from_docket,
+    collect_frdocnums_from_docket,
     document_content_html_paths,
     extract_frdocnums_from_document_json,
     extracted_txt_dir,
