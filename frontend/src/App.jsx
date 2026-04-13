@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Routes, Route, Navigate, Link } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -10,7 +10,8 @@ import AdvancedSidebar from "./components/AdvancedSidebar";
 import SearchBar from "./components/SearchBar";
 import ResultsPanel from "./components/ResultsPanel";
 import { motion } from "motion/react";
-import { ArrowLeftIcon, ArrowRightIcon, BooksIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import SiteNavbar from "./components/SiteNavbar";
 import DownloadStatusModal from "./components/DownloadStatusModal";
 
 
@@ -141,33 +142,8 @@ export default function App() {
           user === null && !authLoading ? (
             <Navigate to="/login" replace />
           ) : (
-            <div className="page">
-              <header className="topbar">
-                <Link to="/" className="brand brand-link">
-                  Mirrulations
-                </Link>
-                <div className="topbar-right">
-                  <span className="topbar-privacy">
-                    <Link to="/privacy">Privacy</Link>
-                  </span>
-                  {user ? (
-                    <div className="auth-section">
-                      <span className="auth-name">{user.name}</span>
-                      <Link to="/explorer" className="btn btn-primary">
-                        Search
-                      </Link>
-                      <a href="/logout" className="btn btn-primary">
-                        Log Out
-                      </a>
-                      <button className="btn btn-primary" onClick={() => setOpenDownloadStatus(true)}>Check Downloads</button>
-                    </div>
-                  ) : (
-                    <a href="/login" className="btn btn-primary">
-                      Log In
-                    </a>
-                  )}
-                </div>
-              </header>
+            <div className="page page--with-site-nav">
+              <SiteNavbar theme="light" onCheckDownloads={() => setOpenDownloadStatus(true)} />
               <div className="layout layout-single">
                 <main className="main">
                   <Collections />
@@ -186,33 +162,8 @@ export default function App() {
           user === null && !authLoading ? (
             <Navigate to="/login" replace />
           ) : (
-            <div className="page">
-              <header className="topbar">
-                <Link to="/" className="brand brand-link">
-                  Mirrulations
-                </Link>
-                <div className="topbar-right">
-                  <span className="topbar-privacy">
-                    <Link to="/privacy">Privacy</Link>
-                  </span>
-                  {user ? (
-                    <div className="auth-section">
-                      <span className="auth-name">{user.name}</span>
-                      <Link to="/collections" className="btn btn-primary collections-nav-btn">
-                        <BooksIcon size={24} weight="duotone" />
-                        My Collections
-                      </Link>
-                      <a href="/logout" className="btn btn-primary">
-                        Log Out
-                      </a>
-                    </div>
-                  ) : (
-                    <a href="/login" className="btn btn-primary">
-                      Log In
-                    </a>
-                  )}
-                </div>
-              </header>
+            <div className="page page--with-site-nav">
+              <SiteNavbar theme="light" showCollectionsLink />
               <div className="layout">
                 <AdvancedSidebar
                   advOpen={advOpen}

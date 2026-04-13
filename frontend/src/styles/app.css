@@ -17,6 +17,19 @@ body {
 
 
   }
+
+  .page--with-site-nav {
+    padding-top: calc(56px + 18px);
+  }
+
+  .page--with-site-nav .layout {
+    margin-top: 8px;
+  }
+
+  .page--with-site-nav .sidebar {
+    top: calc(16px + 56px);
+    max-height: calc(100vh - 96px);
+  }
   
   .topbar{
 	width:min(1200px, calc(100% - 48px));
