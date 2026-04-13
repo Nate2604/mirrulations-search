@@ -228,7 +228,7 @@ def test_search_returns_401_without_cookie(app):  # pylint: disable=redefined-ou
 def test_login_route_redirects(app):  # pylint: disable=redefined-outer-name
     """Login route redirects to Google authorization URL"""
     anon = app.test_client()
-    response = anon.get('/login')
+    response = anon.get('/auth/login')
     assert response.status_code == 302
     assert "mock-auth-url" in response.headers['Location']
 
@@ -286,9 +286,18 @@ def test_invalid_cookie_treated_as_unauthenticated(tmp_path):
     assert response.status_code == 401
 
 
-def test_home_route_with_oauth_code_redirects(app):  # pylint: disable=redefined-outer-name
+def test_home_route_with_oauth_code_redirects(tmp_path):  # pylint: disable=redefined-outer-name
     """Home route exchanges OAuth code and redirects"""
-    anon = app.test_client()
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<html></html>")
+    db = MockDBLayer()
+    db.add_authorized_user("test@example.com", "Test User")  # authorize the mock user
+    test_app = create_app(
+        dist_dir=str(dist), db_layer=db, oauth_handler=MockOAuthHandler()
+    )
+    test_app.config['TESTING'] = True
+    anon = test_app.test_client()
     response = anon.get('/?code=valid-code')
     assert response.status_code == 302
     assert 'jwt_token' in response.headers.get('Set-Cookie', '')
