@@ -102,7 +102,7 @@ def _get_user_from_cookie(oauth_handler):
         return None
 
 
-def _handle_oauth_callback(handler, db_layer_ref=None): # pylint: disable=too-many-locals,too-many-statements
+def _handle_oauth_callback(handler, db_layer_ref=None): # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-return-statements
     """Exchange OAuth code for JWT cookie response. Returns response or None."""
     code = request.args.get("code")
     if not code:
@@ -121,6 +121,18 @@ def _handle_oauth_callback(handler, db_layer_ref=None): # pylint: disable=too-ma
                 response.delete_cookie("login_intent")
                 return response
 
+        elif db_layer_ref is not None:
+            # Regular login — check authorized_users table
+            try:
+                authorized = db_layer_ref.is_authorized_user(user_info["email"]) or \
+                db_layer_ref.is_admin(user_info["email"])
+            except Exception:  # pylint: disable=broad-exception-caught
+                authorized = False
+            if not authorized:
+                response = make_response(redirect("/login?error=unauthorized"))
+                response.delete_cookie("login_intent")
+                return response
+
         user_id = f"{user_info['name']}|{user_info['email']}"
         token = handler.create_jwt_token(user_id)
         redirect_to = "/admin" if intent == "admin" else "/"
@@ -128,6 +140,7 @@ def _handle_oauth_callback(handler, db_layer_ref=None): # pylint: disable=too-ma
         response.set_cookie("jwt_token", token, httponly=True, samesite="Lax", path="/")
         response.delete_cookie("login_intent")
         return response
+
     except (OAuthCodeError, OAuthVerificationError):
         return redirect("/")
 
@@ -152,6 +165,10 @@ def create_app(dist_dir=None, db_layer=None, oauth_handler=None):  # pylint: dis
         return send_from_directory(dist_dir, "index.html")
 
     @flask_app.route("/login")
+    def login_page():
+        return send_from_directory(dist_dir, "index.html")
+
+    @flask_app.route("/auth/login")
     def login():
         handler = oauth_handler or _make_oauth_handler()
         authorization_url, _ = handler.get_authorization_url()

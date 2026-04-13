@@ -88,6 +88,10 @@ class MockDBLayer:  # pylint: disable=too-many-public-methods
     def get_agencies(self) -> List[str]:
         return sorted({item["agency_id"] for item in self._items()})
 
+    def is_authorized_user(self, email: str) -> bool:
+        """Return True if the email is in the authorized users list."""
+        return email.lower() in self._authorized_users
+
     # --- Admin methods ---
 
     def is_admin(self, email: str) -> bool:

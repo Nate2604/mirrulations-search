@@ -107,7 +107,7 @@ export default function Home() {
               </motion.a>
             </>
           ) : (
-            <motion.a href="/login" className="home-nav-google" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <motion.a href="/auth/login" className="home-nav-google" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <span className="home-nav-google-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" width={18} height={18}>
                   <path fill="#EA4335" d="M12 5.04c1.55 0 2.96.54 4.07 1.6l3.03-3.03C17.5 2.32 14.9 1 12 1 7.58 1 3.84 3.47 2.1 7.05l3.51 2.72A6.98 6.98 0 0 1 12 5.04z" />
@@ -231,7 +231,7 @@ export default function Home() {
               <>
                 <p>Sign in with Google to open the search experience.</p>
                 <div className="home-cta-row">
-                  <MotionLink to="/login" className="home-cta-primary" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <MotionLink to="/auth/login" className="home-cta-primary" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     Sign in
                   </MotionLink>
                   <MotionLink to="/privacy" className="home-cta-secondary" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
