@@ -4,8 +4,11 @@ import { motion } from "framer-motion";
 import "../styles/Login.css";
 
 const Login = () => {
+
+  const unauthorized = new URLSearchParams(window.location.search).get("error") === "unauthorized";
+
   const handleGoogleLogin = () => {
-    window.location.href = "/login";
+    window.location.href = "/auth/login";
   };
 
   return (
@@ -25,6 +28,12 @@ const Login = () => {
           Welcome to Mirrulations Explorer. Sign in with your Google account to
           continue.
         </h2>
+
+        {unauthorized && (
+          <p style={{ color: "#f87171", fontSize: "0.9rem", marginBottom: "1rem" }}>
+            Your account is not authorized to access this site.
+          </p>
+        )}
 
         <motion.button
           type="button"
